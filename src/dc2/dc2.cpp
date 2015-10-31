@@ -46,6 +46,7 @@ void CollectIntersectionEdges<FT_UNIT_SPHERE>(
     int top = 0;
     for (int i = 0; i < n - 1; ++i) {
         int count = 0;
+        int which = 0;
 
         if (v0[i] < 0.0f && v0[i + 1] >= 0.0f ||
             v0[i] >= 0.0f && v0[i + 1] < 0.0f) {
@@ -54,6 +55,7 @@ void CollectIntersectionEdges<FT_UNIT_SPHERE>(
             ylow[top] = flag ? y0[i] : y0[i + 1];
             xhigh[top] = flag ? x0[i + 1] : x0[i];
             yhigh[top] = flag ? y0[i + 1] : y0[i];
+            which = 0;
             ++count;
             ++top;
         }
@@ -65,10 +67,16 @@ void CollectIntersectionEdges<FT_UNIT_SPHERE>(
             ylow[top] = flag ? y0[i] : y1[i];
             xhigh[top] = flag ? x1[i] : x0[i];
             yhigh[top] = flag ? y1[i] : y0[i];
+            which = 1;
             ++count;
             ++top;
         }
-        ens[i] = count;
+
+        ens[i] = 0;
+        if (count == 2)
+            ens[i] = 3; // 11b
+        else if (count == 1)
+            ens[i] = 1 << which;
     }
     *en = top;
 }
