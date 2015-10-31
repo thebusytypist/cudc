@@ -1,7 +1,7 @@
-add_executable(pinv-cpp-tests
+add_executable(dc2-tests
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../thirdparty/gtest/gtest_main.cc
     simple.cpp)
 
-target_link_libraries(pinv-cpp-tests
-    pinv-cpp
+target_link_libraries(dc2-tests
+    dc2
     gtest)
