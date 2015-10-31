@@ -12,7 +12,7 @@ TEST(Simple, Simple) {
     const float E[] = {-0.2f, 0.4f, -0.6f, 0.2f};
     float pinv[4];
 
-    pinv2(M, pinv);
+    PseudoInverse2(M, pinv);
 
     EXPECT_FLOAT2X2_EQ(pinv, E);
 }

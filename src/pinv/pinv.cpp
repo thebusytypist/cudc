@@ -2,7 +2,7 @@
 #include <cmath>
 using namespace std;
 
-bool svd2(
+bool SVD2(
     const float* M,
     float* U,
     float* S,
@@ -54,13 +54,13 @@ bool svd2(
     return true;
 }
 
-bool pinv2(
+bool PseudoInverse2(
     const float* M,
     float* pinv) {
     const float EPS = 1e-12f;
 
     float U[4], S[2], VT[4];
-    svd2(M, U, S, VT);
+    SVD2(M, U, S, VT);
 
     S[0] = abs(S[0]) < EPS ? 0.0f : 1.0f / S[0];
     S[1] = abs(S[1]) < EPS ? 0.0f : 1.0f / S[1];
