@@ -28,6 +28,9 @@ void SampleGradient2<FT_UNIT_SPHERE>(
     for (int i = 0; i < n; ++i) {
         ds0[i] = 2 * x[i];
         ds1[i] = 2 * y[i];
+        float l = sqrt(ds0[i] * ds0[i] + ds1[i] * ds1[i]);
+        ds0[i] /= l;
+        ds1[i] /= l;
     }
 }
 
