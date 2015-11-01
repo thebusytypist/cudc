@@ -1,6 +1,8 @@
 #ifndef DC2_INTERNAL_H
 #define DC2_INTERNAL_H
 
+#include "dc2.h"
+
 template <FunctionType>
 void Sample2(
     const Function& f,
