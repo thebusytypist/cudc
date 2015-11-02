@@ -44,7 +44,7 @@ TEST(UnitSphere, SampleGradient2) {
     EXPECT_FLOAT_EQ(-1.0f / sqrt(2.0f), ds1[2]);
 }
 
-TEST(UnitSphere, CollectIntersectionEdges) {
+TEST(UnitSphere, CollectIntersectionEdges2) {
     Function f;
     f.FunctionType = FT_UNIT_SPHERE;
 
@@ -62,7 +62,7 @@ TEST(UnitSphere, CollectIntersectionEdges) {
     int ens[2];
     int n;
 
-    CollectIntersectionEdges<FT_UNIT_SPHERE>(
+    CollectIntersectionEdges2<FT_UNIT_SPHERE>(
         f,
         x, y0,
         x, y1,
@@ -80,7 +80,7 @@ TEST(UnitSphere, CollectIntersectionEdges) {
     EXPECT_FLOAT_EQ(-2.0f, yhigh[0]);
 }
 
-TEST(UnitSphere, SolveIntersection) {
+TEST(UnitSphere, SolveIntersection2) {
     Function f;
     f.FunctionType = FT_UNIT_SPHERE;
 
@@ -98,7 +98,7 @@ TEST(UnitSphere, SolveIntersection) {
     int ens[2];
     int n;
 
-    CollectIntersectionEdges<FT_UNIT_SPHERE>(
+    CollectIntersectionEdges2<FT_UNIT_SPHERE>(
         f,
         x, y0,
         x, y1,
@@ -107,7 +107,7 @@ TEST(UnitSphere, SolveIntersection) {
         ens, &n);
 
     float ix[4], iy[4];
-    SolveIntersection<FT_UNIT_SPHERE>(
+    SolveIntersection2<FT_UNIT_SPHERE>(
         f,
         xlow, ylow,
         xhigh, yhigh,

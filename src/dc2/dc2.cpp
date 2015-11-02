@@ -35,7 +35,7 @@ void SampleGradient2<FT_UNIT_SPHERE>(
 }
 
 template <>
-void CollectIntersectionEdges<FT_UNIT_SPHERE>(
+void CollectIntersectionEdges2<FT_UNIT_SPHERE>(
     const Function& f,
     const float* x0, const float* y0,
     const float* x1, const float* y1,
@@ -85,7 +85,7 @@ void CollectIntersectionEdges<FT_UNIT_SPHERE>(
 }
 
 template <>
-void SolveIntersection<FT_UNIT_SPHERE>(
+void SolveIntersection2<FT_UNIT_SPHERE>(
     const Function& f,
     const float* xlow, const float* ylow,
     const float* xhigh, const float* yhigh,
@@ -120,4 +120,16 @@ void SolveIntersection<FT_UNIT_SPHERE>(
         x[i] = cx;
         y[i] = cy;
     }
+}
+
+void ConstructQEF2(
+    const float* ix0, const float* iy0,
+    const float* ix1, const float* iy1,
+    const int* ens,
+    float* f) {
+
+}
+
+void SolveQEF2(const float* f, float* p, int n) {
+
 }
