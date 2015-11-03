@@ -1,7 +1,8 @@
 #include "dc2.h"
 #include "dc2-internal.h"
-#include <cmath>
 #include <cassert>
+#include <cmath>
+#include <cstring>
 using namespace std;
 
 template <>
@@ -129,7 +130,71 @@ void ConstructQEF2(
     const float* nx1, const float* ny1,
     const int* ens0, const int* ens1, int n,
     float* f, int* m) {
+    int count_total[] = {0, 1, 1, 2};
+    int count_horizontal[] = {0, 1, 0, 1};
 
+    *m = 0;
+    int start0 = 0, start1 = 0;
+    for (int i = 0; i < n; ++i) {
+        int c0 = count_total[ens0[i]];
+        int c1 = count_horizontal[ens1[i]];
+        int c2 = count_total[ens1[i]];
+
+        if (c0 + c1 < 2){
+            start0 += c0;
+            start1 += c2;
+            continue;
+        }
+
+        float A[8];
+        float b[4];
+        memset(A, 0, sizeof(A));
+        memset(b, 0, sizeof(b));
+
+        float gx = 0.0f;
+        float gy = 0.0f;
+
+        for (int j = 0; j < c0; ++j) {
+            const float nx = nx0[start0 + j];
+            const float ny = ny0[start0 + j];
+            const float ix = ix0[start0 + j];
+            const float iy = iy0[start0 + j];
+            A[j * 2] = nx;
+            A[j * 2 + 1] = ny;
+            b[j] = nx * ix + ny * iy;
+            gx += ix / (c0 + c1);
+            gy += iy / (c0 + c1);
+        }
+
+        for (int j = 0; j < c1; ++j) {
+            const float nx = nx1[start1 + j];
+            const float ny = ny1[start1 + j];
+            const float ix = ix1[start1 + j];
+            const float iy = ix1[start1 + j];
+            A[(c0 + j) * 2] = nx;
+            A[(c0 + j) * 2 + 1] = ny;
+            b[c0 + j] = nx * ix + ny * iy;
+            gx += ix / (c0 + c1);
+            gy += iy / (c0 + c1);
+        }
+
+        // Compute ATA and ATb.
+        const float f0 = A[0] * A[0] + A[2] * A[2] + A[4] * A[4] + A[6] * A[6];
+        const float f1 = A[0] * A[1] + A[2] * A[3] + A[4] * A[5] + A[6] * A[7];
+        const float f2 = A[1] * A[1] + A[3] * A[3] + A[5] * A[5] + A[7] * A[7];
+
+        const float f3 = A[0] * b[0] + A[2] * b[1] + A[4] * b[2] + A[6] * b[3];
+        const float f4 = A[1] * b[0] + A[3] * b[1] + A[5] * b[2] + A[7] * b[3];
+
+        float data[] = {
+            f0, f1, f2, f3, f4, gx, gy
+        };
+        memcpy(f + i * 7, data, sizeof(data));
+        *m += 1;
+
+        start0 += c0;
+        start1 += c2;
+    }
 }
 
 void SolveQEF2(const float* f, float* p, int n) {
