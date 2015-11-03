@@ -5,7 +5,7 @@ using namespace std;
 
 TEST(UnitSphere, Sample2) {
     Function f;
-    f.FunctionType = FT_UNIT_SPHERE;
+    f.mFunctionType = FT_UNIT_SPHERE;
 
     float x[3] = {-2.0f, 0.0f, 2.0f};
     float y0[3] = {-2.0f, -2.0f, -2.0f};
@@ -26,7 +26,7 @@ TEST(UnitSphere, Sample2) {
 
 TEST(UnitSphere, SampleGradient2) {
     Function f;
-    f.FunctionType = FT_UNIT_SPHERE;
+    f.mFunctionType = FT_UNIT_SPHERE;
 
     float x[3] = {-2.0f, 0.0f, 2.0f};
     float y[3] = {-2.0f, -2.0f, -2.0f};
@@ -46,7 +46,7 @@ TEST(UnitSphere, SampleGradient2) {
 
 TEST(UnitSphere, CollectIntersectionEdges2) {
     Function f;
-    f.FunctionType = FT_UNIT_SPHERE;
+    f.mFunctionType = FT_UNIT_SPHERE;
 
     float x[3] = {-2.0f, 0.0f, 2.0f};
     float y0[3] = {-2.0f, -2.0f, -2.0f};
@@ -82,7 +82,7 @@ TEST(UnitSphere, CollectIntersectionEdges2) {
 
 TEST(UnitSphere, SolveIntersection2) {
     Function f;
-    f.FunctionType = FT_UNIT_SPHERE;
+    f.mFunctionType = FT_UNIT_SPHERE;
 
     float x[3] = {-2.0f, 0.0f, 2.0f};
     float y0[3] = {-2.0f, -2.0f, -2.0f};

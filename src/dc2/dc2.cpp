@@ -8,7 +8,7 @@ template <>
 void Sample2<FT_UNIT_SPHERE>(
     const Function& f,
     const float* x, const float* y, float* s, int n) {
-    assert(f.FunctionType == FT_UNIT_SPHERE);
+    assert(f.mFunctionType == FT_UNIT_SPHERE);
 
     for (int i = 0; i < n; ++i) {
         s[i] = x[i] * x[i] + y[i] * y[i] - 1.0f;
@@ -21,7 +21,7 @@ void SampleGradient2<FT_UNIT_SPHERE>(
     const float* x, const float* y,
     float* ds0, float* ds1,
     int n) {
-    assert(f.FunctionType == FT_UNIT_SPHERE);
+    assert(f.mFunctionType == FT_UNIT_SPHERE);
 
     const float dh = 1e-5f;
 
@@ -44,7 +44,7 @@ void CollectIntersectionEdges2<FT_UNIT_SPHERE>(
     float* xhigh, float* yhigh,
     int* ens,
     int* en) {
-    assert(f.FunctionType == FT_UNIT_SPHERE);
+    assert(f.mFunctionType == FT_UNIT_SPHERE);
 
     int top = 0;
     for (int i = 0; i < n - 1; ++i) {
@@ -92,7 +92,7 @@ void SolveIntersection2<FT_UNIT_SPHERE>(
     float* x,
     float* y,
     int n) {
-    assert(f.FunctionType == FT_UNIT_SPHERE);
+    assert(f.mFunctionType == FT_UNIT_SPHERE);
 
     const float eps = 1e-12f;
 

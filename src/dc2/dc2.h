@@ -7,7 +7,7 @@ enum FunctionType {
 };
 
 struct Function {
-    FunctionType FunctionType;
+    FunctionType mFunctionType;
 };
 
 #endif
