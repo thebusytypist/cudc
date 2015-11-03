@@ -125,8 +125,8 @@ void SolveIntersection2<FT_UNIT_SPHERE>(
 void ConstructQEF2(
     const float* ix0, const float* iy0,
     const float* ix1, const float* iy1,
-    const int* ens,
-    float* f) {
+    const int* ens0, const int* ens1, int n,
+    float* f, int* m) {
 
 }
 
