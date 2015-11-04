@@ -156,4 +156,17 @@ TEST(UnitSphere, ConstructQEF2) {
         ix1, iy1,
         nx1, ny1,
         n1);
+    
+    float qef[7 * 2];
+    bool h[2];
+    int m = 0;
+    ConstructQEF2(
+        ix0, iy0,
+        ix1, iy1,
+        nx0, ny0,
+        nx1, ny1,
+        ens0, ens1, 3,
+        qef, h, &m);
+    float p[2 * 2];
+    SolveQEF2(qef, p, m);
 }
