@@ -1,5 +1,6 @@
 #include "dc2.h"
 #include "dc2-internal.h"
+#include "pinv.h"
 #include <cassert>
 #include <cmath>
 #include <cstring>
@@ -215,5 +216,25 @@ void ConstructQEF2(
 }
 
 void SolveQEF2(const float* f, float* p, int n) {
-
+    const float* s = f;
+    float* q = p;
+    for (int i = 0; i < n; ++i, s += 7, q += 2) {
+        const float ATA[4] = {s[0], s[1], s[1], s[2]};
+        float pinv[4];
+        PseudoInverse2(ATA, pinv);
+        const float ATAg[2] = {
+            ATA[0] * s[5] + ATA[1] * s[6],
+            ATA[2] * s[5] + ATA[3] * s[6]
+        };
+        const float d[2] = {
+            f[3] - ATAg[0],
+            f[4] - ATAg[1]
+        };
+        const float c[2] = {
+            pinv[0] * d[0] + pinv[1] * d[1],
+            pinv[2] * d[0] + pinv[3] * d[1]
+        };
+        q[0] = c[0] + s[5];
+        q[1] = c[1] + s[6];
+    }
 }
