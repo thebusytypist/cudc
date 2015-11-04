@@ -129,22 +129,27 @@ void ConstructQEF2(
     const float* nx0, const float* ny0,
     const float* nx1, const float* ny1,
     const int* ens0, const int* ens1, int n,
-    float* f, int* m) {
+    float* f, bool* h, int* m) {
     int count_total[] = {0, 1, 1, 2};
     int count_horizontal[] = {0, 1, 0, 1};
+    int count_vertical[] = {0, 0, 1, 1};
 
     *m = 0;
     int start0 = 0, start1 = 0;
-    for (int i = 0; i < n; ++i) {
+    for (int i = 0; i < n - 1; ++i) {
         int c0 = count_total[ens0[i]];
         int c1 = count_horizontal[ens1[i]];
         int c2 = count_total[ens1[i]];
+        int c3 = count_vertical[ens0[i + 1]];
 
-        if (c0 + c1 < 2){
+        if (c0 + c1 + c3 < 2){
+            h[i] = false;
             start0 += c0;
             start1 += c2;
             continue;
         }
+
+        h[i] = true;
 
         float A[8];
         float b[4];
@@ -162,8 +167,8 @@ void ConstructQEF2(
             A[j * 2] = nx;
             A[j * 2 + 1] = ny;
             b[j] = nx * ix + ny * iy;
-            gx += ix / (c0 + c1);
-            gy += iy / (c0 + c1);
+            gx += ix / (c0 + c1 + c3);
+            gy += iy / (c0 + c1 + c3);
         }
 
         for (int j = 0; j < c1; ++j) {
@@ -174,8 +179,20 @@ void ConstructQEF2(
             A[(c0 + j) * 2] = nx;
             A[(c0 + j) * 2 + 1] = ny;
             b[c0 + j] = nx * ix + ny * iy;
-            gx += ix / (c0 + c1);
-            gy += iy / (c0 + c1);
+            gx += ix / (c0 + c1 + c3);
+            gy += iy / (c0 + c1 + c3);
+        }
+
+        for (int j = 0; j < c3; ++j) {
+            const float nx = nx0[start0 + c0 + j];
+            const float ny = ny0[start0 + c0 + j];
+            const float ix = ix0[start0 + c0 + j];
+            const float iy = iy0[start0 + c0 + j];
+            A[(c0 + c1 + j) * 2] = nx;
+            A[(c0 + c1 + j) * 2 + 1] = ny;
+            b[c0 + c1 + j] = mx * ix + ny * iy;
+            gx += ix / (c0 + c1 + c3);
+            gy += iy / (c0 + c1 + c3);
         }
 
         // Compute ATA and ATb.

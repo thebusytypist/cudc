@@ -103,6 +103,8 @@ void SolveIntersection2(
   @param n number of cells in a row.
   @param[out] f an array of QEF coefficients.
               Each QEF has 7 coefficients.
+  @param[out] h an array of size n - 1 indicating
+              if the cell contributes a mesh vertex.
   @param[out] m total number of QEFs.
 */
 void ConstructQEF2(
@@ -111,7 +113,7 @@ void ConstructQEF2(
     const float* nx0, const float* ny0,
     const float* nx1, const float* ny1,
     const int* ens0, const int* ens1, int n,
-    float* f, int* m);
+    float* f, bool* h, int* m);
 
 /**
   \brief Solve the QEFs for the mesh vertices.
