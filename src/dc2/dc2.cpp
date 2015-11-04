@@ -9,11 +9,17 @@ using namespace std;
 template <>
 void Sample2<FT_UNIT_SPHERE>(
     const Function& f,
-    const float* x, const float* y, float* s, int n) {
+    float x0, float x1,
+    float y0, float y1,
+    float* s, int n) {
     assert(f.mFunctionType == FT_UNIT_SPHERE);
 
+    const float xstep = (x1 - x0) / (n - 1.0f);
+    const float ystep = (y1 - y0) / (n - 1.0f);
     for (int i = 0; i < n; ++i) {
-        s[i] = x[i] * x[i] + y[i] * y[i] - 1.0f;
+        const float x = x0 + i * xstep;
+        const float y = y0 + i * ystep;
+        s[i] = x * x + y * y - 1.0f;
     }
 }
 

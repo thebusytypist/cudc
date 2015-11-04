@@ -6,15 +6,19 @@
 /**
   \brief Sample the 2D mesh grid.
 
-  @param[in] x x coordinates.
-  @param[in] y y coordinates.
+  @param[in] x0 starting x coordinates.
+  @param[in] y0 starting y coordinates.
+  @param[in] x1 ending x coordinates.
+  @param[in] y1 ending y coordinates.
   @param[out] s sampled values.
   @param n number of mesh grid vertices.
 */
 template <FunctionType>
 void Sample2(
     const Function& f,
-    const float* x, const float* y, float* s, int n);
+    float x0, float x1,
+    float y0, float y1,
+    float* s, int n);
 
 /**
   \brief Sample the 2D mesh grid for the gradients.
