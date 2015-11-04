@@ -62,8 +62,7 @@ TEST(UnitSphere, CollectIntersectionEdges2) {
     int ens[2];
     int n;
 
-    CollectIntersectionEdges2<FT_UNIT_SPHERE>(
-        f,
+    CollectIntersectionEdges2(
         x, y0,
         x, y1,
         s0, s1, 3,
@@ -98,8 +97,7 @@ TEST(UnitSphere, SolveIntersection2) {
     int ens[2];
     int n;
 
-    CollectIntersectionEdges2<FT_UNIT_SPHERE>(
-        f,
+    CollectIntersectionEdges2(
         x, y0,
         x, y1,
         s0, s1, 3,

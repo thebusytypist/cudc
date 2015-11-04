@@ -52,9 +52,7 @@ void SampleGradient2(
               in a grid cell.
   @param[out] en total number of intersected edges.
 */
-template <FunctionType>
 void CollectIntersectionEdges2(
-    const Function& f,
     const float* x0, const float* y0,
     const float* x1, const float* y1,
     const float* v0, const float* v1, int n,

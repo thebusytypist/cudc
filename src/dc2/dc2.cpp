@@ -36,9 +36,7 @@ void SampleGradient2<FT_UNIT_SPHERE>(
     }
 }
 
-template <>
-void CollectIntersectionEdges2<FT_UNIT_SPHERE>(
-    const Function& f,
+void CollectIntersectionEdges2(
     const float* x0, const float* y0,
     const float* x1, const float* y1,
     const float* v0, const float* v1, int n,
@@ -46,7 +44,6 @@ void CollectIntersectionEdges2<FT_UNIT_SPHERE>(
     float* xhigh, float* yhigh,
     int* ens,
     int* en) {
-    assert(f.mFunctionType == FT_UNIT_SPHERE);
 
     int top = 0;
     for (int i = 0; i < n - 1; ++i) {
@@ -191,7 +188,7 @@ void ConstructQEF2(
             const float iy = iy0[start0 + c0 + j];
             A[(c0 + c1 + j) * 2] = nx;
             A[(c0 + c1 + j) * 2 + 1] = ny;
-            b[c0 + c1 + j] = mx * ix + ny * iy;
+            b[c0 + c1 + j] = nx * ix + ny * iy;
             gx += ix / (c0 + c1 + c3);
             gy += iy / (c0 + c1 + c3);
         }
