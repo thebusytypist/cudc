@@ -44,10 +44,6 @@ TEST(UnitSphere, CollectIntersectionEdges2) {
     Function f;
     f.mFunctionType = FT_UNIT_SPHERE;
 
-    float x[3] = {-2.0f, 0.0f, 2.0f};
-    float y0[3] = {-2.0f, -2.0f, -2.0f};
-    float y1[3] = {0.0f, 0.0f, 0.0f};
-
     float s0[3], s1[3];
 
     Sample2<FT_UNIT_SPHERE>(f, -2.0f, 2.0f, -2.0f, -2.0f, s0, 3);
@@ -59,8 +55,8 @@ TEST(UnitSphere, CollectIntersectionEdges2) {
     int n;
 
     CollectIntersectionEdges2(
-        x, y0,
-        x, y1,
+        -2.0f, 2.0f, -2.0f, -2.0f,
+        -2.0f, 2.0f, 0.0f, 0.0f,
         s0, s1, 3,
         xlow, ylow, xhigh, yhigh,
         ens, &n);
@@ -79,10 +75,6 @@ TEST(UnitSphere, SolveIntersection2) {
     Function f;
     f.mFunctionType = FT_UNIT_SPHERE;
 
-    float x[3] = {-2.0f, 0.0f, 2.0f};
-    float y0[3] = {-2.0f, -2.0f, -2.0f};
-    float y1[3] = {0.0f, 0.0f, 0.0f};
-
     float s0[3], s1[3];
 
     Sample2<FT_UNIT_SPHERE>(f, -2.0f, 2.0f, -2.0f, -2.0f, s0, 3);
@@ -94,8 +86,8 @@ TEST(UnitSphere, SolveIntersection2) {
     int n;
 
     CollectIntersectionEdges2(
-        x, y0,
-        x, y1,
+        -2.0f, 2.0f, -2.0f, -2.0f,
+        -2.0f, 2.0f, 0.0f, 0.0f,
         s0, s1, 3,
         xlow, ylow, xhigh, yhigh,
         ens, &n);

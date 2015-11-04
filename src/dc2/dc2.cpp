@@ -9,16 +9,16 @@ using namespace std;
 template <>
 void Sample2<FT_UNIT_SPHERE>(
     const Function& f,
-    float x0, float x1,
-    float y0, float y1,
+    float xs, float xt,
+    float ys, float yt,
     float* s, int n) {
     assert(f.mFunctionType == FT_UNIT_SPHERE);
 
-    const float xstep = (x1 - x0) / (n - 1.0f);
-    const float ystep = (y1 - y0) / (n - 1.0f);
+    const float xstep = (xt - xs) / (n - 1);
+    const float ystep = (yt - ys) / (n - 1);
     for (int i = 0; i < n; ++i) {
-        const float x = x0 + i * xstep;
-        const float y = y0 + i * ystep;
+        const float x = xs + i * xstep;
+        const float y = ys + i * ystep;
         s[i] = x * x + y * y - 1.0f;
     }
 }
@@ -43,26 +43,38 @@ void SampleGradient2<FT_UNIT_SPHERE>(
 }
 
 void CollectIntersectionEdges2(
-    const float* x0, const float* y0,
-    const float* x1, const float* y1,
+    float x0s, float x0t,
+    float y0s, float y0t,
+    float x1s, float x1t,
+    float y1s, float y1t,
     const float* v0, const float* v1, int n,
     float* xlow, float* ylow,
     float* xhigh, float* yhigh,
     int* ens,
     int* en) {
 
+    const float xstep = (x0t - x0s) / (n - 1);
+    const float ystep = (y0t - y0s) / (n - 1);
+
     int top = 0;
     for (int i = 0; i < n - 1; ++i) {
         int count = 0;
         int which = 0;
 
+        const float x0i = x0s + i * xstep;
+        const float x0i1 = x0s + (i + 1) * xstep;
+        const float y0i = y0s + i * ystep;
+        const float y0i1 = y0s + (i + 1) * ystep;
+        const float x1i = x1s + i * xstep;
+        const float y1i = y1s + i * ystep;
+
         if (v0[i] < 0.0f && v0[i + 1] >= 0.0f ||
             v0[i] >= 0.0f && v0[i + 1] < 0.0f) {
             const bool flag = v0[i] < 0.0f;
-            xlow[top] = flag ? x0[i] : x0[i + 1];
-            ylow[top] = flag ? y0[i] : y0[i + 1];
-            xhigh[top] = flag ? x0[i + 1] : x0[i];
-            yhigh[top] = flag ? y0[i + 1] : y0[i];
+            xlow[top] = flag ? x0i : x0i1;
+            ylow[top] = flag ? y0i : y0i1;
+            xhigh[top] = flag ? x0i1 : x0i;
+            yhigh[top] = flag ? y0i1 : y0i;
             which = 0;
             ++count;
             ++top;
@@ -71,10 +83,10 @@ void CollectIntersectionEdges2(
         if (v0[i] < 0.0f && v1[i] >= 0.0f ||
             v0[i] >= 0.0f && v1[i] < 0.0f) {
             const bool flag = v0[i] < 0.0f;
-            xlow[top] = flag ? x0[i] : x1[i];
-            ylow[top] = flag ? y0[i] : y1[i];
-            xhigh[top] = flag ? x1[i] : x0[i];
-            yhigh[top] = flag ? y1[i] : y0[i];
+            xlow[top] = flag ? x0i : x1i;
+            ylow[top] = flag ? y0i : y1i;
+            xhigh[top] = flag ? x1i : x0i;
+            yhigh[top] = flag ? y1i : y0i;
             which = 1;
             ++count;
             ++top;

@@ -6,18 +6,18 @@
 /**
   \brief Sample the 2D mesh grid.
 
-  @param[in] x0 starting x coordinates.
-  @param[in] y0 starting y coordinates.
-  @param[in] x1 ending x coordinates.
-  @param[in] y1 ending y coordinates.
+  @param[in] xs starting x coordinates.
+  @param[in] xt ending x coordinates.
+  @param[in] ys starting y coordinates.
+  @param[in] yt ending y coordinates.
   @param[out] s sampled values.
   @param n number of mesh grid vertices.
 */
 template <FunctionType>
 void Sample2(
     const Function& f,
-    float x0, float x1,
-    float y0, float y1,
+    float xs, float xt,
+    float ys, float yt,
     float* s, int n);
 
 /**
@@ -39,12 +39,16 @@ void SampleGradient2(
 /**
   \brief Collect the intersection edges for each grid cell.
 
-  @param[in] x0 x coordinates of the first row of cells.
-  @param[in] y0 y coordinates of the first row of cells.
-  @param[in] x1 x coordinates of the second row of cells.
-  @param[in] y1 y coordinates of the second row of cells.
-  @param[in] v0 sampled values of the first row of cells.
-  @param[in] v1 sampled values of the second row of cells.
+  @param x0s starting x coordinates of the first row of cells.
+  @param x0t ending x coordinates of the first row of cells.
+  @param y0s starting y coordinates of the first row of cells.
+  @param y0t ending y coordinates of the first row of cells.
+  @param x1s starting x coordinates of the second row of cells.
+  @param x1t ending x coordinates of the second row of cells.
+  @param y1s starting y coordinates of the second row of cells.
+  @param y1t ending y coordinates of the second row of cells.
+  @param v0 sampled values of the first row of cells.
+  @param v1 sampled values of the second row of cells.
   @param n number of mesh grid vertices.
   @param[out] xlow x coordinates of vertices who has negative sampled values.
   @param[out] ylow y coordinates of vertices who has negative sampled values.
@@ -57,8 +61,10 @@ void SampleGradient2(
   @param[out] en total number of intersected edges.
 */
 void CollectIntersectionEdges2(
-    const float* x0, const float* y0,
-    const float* x1, const float* y1,
+    float x0s, float x0t,
+    float y0s, float y0t,
+    float x1s, float x1t,
+    float y1s, float y1t,
     const float* v0, const float* v1, int n,
     float* xlow, float* ylow,
     float* xhigh, float* yhigh,
