@@ -145,7 +145,7 @@ bool ConstructQEF2(
     const float* nx0, const float* ny0,
     const float* nx1, const float* ny1,
     const int* ens0, const int* ens1, int n,
-    float* f, bool* h, int* m, int capacity) {
+    float* f, int* h, int* m, int capacity) {
     int count_total[] = {0, 1, 1, 2};
     int count_horizontal[] = {0, 1, 0, 1};
     int count_vertical[] = {0, 0, 1, 1};
@@ -159,13 +159,13 @@ bool ConstructQEF2(
         int c3 = count_vertical[ens0[i + 1]];
 
         if (c0 + c1 + c3 < 2){
-            h[i] = false;
+            h[i] = -1;
             start0 += c0;
             start1 += c2;
             continue;
         }
 
-        h[i] = true;
+        h[i] = *m;
 
         float A[8];
         float b[4];

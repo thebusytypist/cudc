@@ -103,7 +103,7 @@ TEST(UnitSphere, SolveIntersection2) {
     EXPECT_FLOAT_EQ(-1.0f, iy[0]);
 }
 
-TEST(UnitSphere, ConstructQEF2) {
+TEST(UnitSphere, QEF2) {
     Function f;
     f.mFunctionType = FT_UNIT_SPHERE;
 
@@ -158,7 +158,7 @@ TEST(UnitSphere, ConstructQEF2) {
         n1);
     
     float qef[7 * 2];
-    bool h[2];
+    int h[2];
     int m = 0;
     bool r = ConstructQEF2(
         ix0, iy0,
@@ -168,6 +168,9 @@ TEST(UnitSphere, ConstructQEF2) {
         ens0, ens1, 3,
         qef, h, &m, 2);
     EXPECT_TRUE(r);
+    EXPECT_EQ(0, h[0]);
+    EXPECT_EQ(1, h[1]);
+
     float p[2 * 2];
     SolveQEF2(qef, p, m);
 
