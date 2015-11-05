@@ -17,14 +17,18 @@ bool SVD2(
     const float hw1mw2 = sqrt(f * f + g * g);
 
     // cos(y - b)
-    const float cymb = f / hw1mw2;
+    const float cymb = hw1mw2 != 0.0f ? f / hw1mw2 : 1.0f;
 
     // cos(y + b)
-    const float cypb = e / hw1pw2;
+    const float cypb = hw1pw2 != 0.0f ? e / hw1pw2 : 1.0f;
 
+    // | cos(y) + cos(b) |
     const float cc = sqrt((1 + cymb) * (1 + cypb));
+    // | cos(y) - cos(b) |
     const float ss = sqrt((1 - cymb) * (1 - cypb));
+    // | sin(y) - sin(b) |
     const float cs = sqrt((1 + cymb) * (1 - cypb));
+    // | sin(y) + sin(b) |
     const float sc = sqrt((1 - cymb) * (1 + cypb));
 
     const float cb = (cc - ss) * 0.5f;

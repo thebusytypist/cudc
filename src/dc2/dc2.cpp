@@ -191,7 +191,7 @@ void ConstructQEF2(
             const float nx = nx1[start1 + j];
             const float ny = ny1[start1 + j];
             const float ix = ix1[start1 + j];
-            const float iy = ix1[start1 + j];
+            const float iy = iy1[start1 + j];
             A[(c0 + j) * 2] = nx;
             A[(c0 + j) * 2 + 1] = ny;
             b[c0 + j] = nx * ix + ny * iy;
@@ -242,8 +242,8 @@ void SolveQEF2(const float* f, float* p, int n) {
             ATA[2] * s[5] + ATA[3] * s[6]
         };
         const float d[2] = {
-            f[3] - ATAg[0],
-            f[4] - ATAg[1]
+            s[3] - ATAg[0],
+            s[4] - ATAg[1]
         };
         const float c[2] = {
             pinv[0] * d[0] + pinv[1] * d[1],
