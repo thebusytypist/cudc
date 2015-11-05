@@ -3,17 +3,15 @@
 #include "pinv.h"
 #include <cassert>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 using namespace std;
 
 template <>
 void Sample2<FT_UNIT_SPHERE>(
-    const Function& f,
     float xs, float xt,
     float ys, float yt,
     float* s, int n) {
-    assert(f.mFunctionType == FT_UNIT_SPHERE);
-
     const float xstep = (xt - xs) / (n - 1);
     const float ystep = (yt - ys) / (n - 1);
     for (int i = 0; i < n; ++i) {
@@ -25,12 +23,9 @@ void Sample2<FT_UNIT_SPHERE>(
 
 template <>
 void SampleGradient2<FT_UNIT_SPHERE>(
-    const Function& f,
     const float* x, const float* y,
     float* ds0, float* ds1,
     int n) {
-    assert(f.mFunctionType == FT_UNIT_SPHERE);
-
     const float dh = 1e-5f;
 
     for (int i = 0; i < n; ++i) {
@@ -103,14 +98,11 @@ void CollectIntersectionEdges2(
 
 template <>
 void SolveIntersection2<FT_UNIT_SPHERE>(
-    const Function& f,
     const float* xlow, const float* ylow,
     const float* xhigh, const float* yhigh,
     float* x,
     float* y,
     int n) {
-    assert(f.mFunctionType == FT_UNIT_SPHERE);
-
     const float eps = 1e-12f;
 
     for (int i = 0; i < n; ++i) {
@@ -258,4 +250,37 @@ void SolveQEF2(const float* f, float* p, int n) {
         q[0] = c[0] + s[5];
         q[1] = c[1] + s[6];
     }
+}
+
+template <FunctionType FT>
+bool DualContour2(
+    float xs, float xt,
+    float ys, float yt, int n,
+    float* p, int pcap,
+    int* edge, int ecap) {
+    int nsamples = n + 1;
+    int ncells = n;
+    const float xstep = (xt - xs) / n;
+    const float ystep = (xt - xs) / n;
+
+    float* s = (float*)malloc(sizeof(float) * nsamples * 3);
+    const float* s0 = s;
+    const float* s1 = s + nsamples;
+    const float* s2 = s1 + nsamples;
+
+    // Prepare three rows of samples.
+    Sample2<FT>(
+        xs, xt + xstep,
+        ys, ys,
+        s0, nsamples);
+    Sample2<FT>(
+        xs, xt + xstep,
+        ys + ystep, ys + ystep,
+        s1, nsamples);
+    Sample2<FT>(
+        xs, xt + xstep,
+        ys + ystep * 2.0f, ys + ystep * 2.0f,
+        s2, nsamples);
+
+    return true;
 }

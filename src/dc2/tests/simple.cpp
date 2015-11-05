@@ -4,32 +4,26 @@
 using namespace std;
 
 TEST(UnitSphere, Sample2) {
-    Function f;
-    f.mFunctionType = FT_UNIT_SPHERE;
-
     float s[3];
 
-    Sample2<FT_UNIT_SPHERE>(f, -2.0f, 2.0f, -2.0f, -2.0f, s, 3);
+    Sample2<FT_UNIT_SPHERE>(-2.0f, 2.0f, -2.0f, -2.0f, s, 3);
     EXPECT_FLOAT_EQ(7.0f, s[0]);
     EXPECT_FLOAT_EQ(3.0f, s[1]);
     EXPECT_FLOAT_EQ(7.0f, s[2]);
 
-    Sample2<FT_UNIT_SPHERE>(f, -2.0f, 2.0f, 0.0f, 0.0f, s, 3);
+    Sample2<FT_UNIT_SPHERE>(-2.0f, 2.0f, 0.0f, 0.0f, s, 3);
     EXPECT_FLOAT_EQ(3.0f, s[0]);
     EXPECT_FLOAT_EQ(-1.0f, s[1]);
     EXPECT_FLOAT_EQ(3.0f, s[2]);    
 }
 
 TEST(UnitSphere, SampleGradient2) {
-    Function f;
-    f.mFunctionType = FT_UNIT_SPHERE;
-
     float x[3] = {-2.0f, 0.0f, 2.0f};
     float y[3] = {-2.0f, -2.0f, -2.0f};
 
     float ds0[3], ds1[3];
 
-    SampleGradient2<FT_UNIT_SPHERE>(f, x, y, ds0, ds1, 3);
+    SampleGradient2<FT_UNIT_SPHERE>(x, y, ds0, ds1, 3);
     EXPECT_FLOAT_EQ(-1.0f / sqrt(2.0f), ds0[0]);
     EXPECT_FLOAT_EQ(-1.0f / sqrt(2.0f), ds1[0]);
 
@@ -41,13 +35,10 @@ TEST(UnitSphere, SampleGradient2) {
 }
 
 TEST(UnitSphere, CollectIntersectionEdges2) {
-    Function f;
-    f.mFunctionType = FT_UNIT_SPHERE;
-
     float s0[3], s1[3];
 
-    Sample2<FT_UNIT_SPHERE>(f, -2.0f, 2.0f, -2.0f, -2.0f, s0, 3);
-    Sample2<FT_UNIT_SPHERE>(f, -2.0f, 2.0f, 0.0f, 0.0f, s1, 3);
+    Sample2<FT_UNIT_SPHERE>(-2.0f, 2.0f, -2.0f, -2.0f, s0, 3);
+    Sample2<FT_UNIT_SPHERE>(-2.0f, 2.0f, 0.0f, 0.0f, s1, 3);
 
     float xlow[4], ylow[4];
     float xhigh[4], yhigh[4];
@@ -72,13 +63,10 @@ TEST(UnitSphere, CollectIntersectionEdges2) {
 }
 
 TEST(UnitSphere, SolveIntersection2) {
-    Function f;
-    f.mFunctionType = FT_UNIT_SPHERE;
-
     float s0[3], s1[3];
 
-    Sample2<FT_UNIT_SPHERE>(f, -2.0f, 2.0f, -2.0f, -2.0f, s0, 3);
-    Sample2<FT_UNIT_SPHERE>(f, -2.0f, 2.0f, 0.0f, 0.0f, s1, 3);
+    Sample2<FT_UNIT_SPHERE>(-2.0f, 2.0f, -2.0f, -2.0f, s0, 3);
+    Sample2<FT_UNIT_SPHERE>(-2.0f, 2.0f, 0.0f, 0.0f, s1, 3);
 
     float xlow[4], ylow[4];
     float xhigh[4], yhigh[4];
@@ -94,7 +82,6 @@ TEST(UnitSphere, SolveIntersection2) {
 
     float ix[4], iy[4];
     SolveIntersection2<FT_UNIT_SPHERE>(
-        f,
         xlow, ylow,
         xhigh, yhigh,
         ix, iy, n);
@@ -104,14 +91,11 @@ TEST(UnitSphere, SolveIntersection2) {
 }
 
 TEST(UnitSphere, QEF2) {
-    Function f;
-    f.mFunctionType = FT_UNIT_SPHERE;
-
     float s0[4], s1[4], s2[4];
 
-    Sample2<FT_UNIT_SPHERE>(f, -2.0f, 4.0f, -2.0f, -2.0f, s0, 4);
-    Sample2<FT_UNIT_SPHERE>(f, -2.0f, 4.0f, 0.0f, 0.0f, s1, 4);
-    Sample2<FT_UNIT_SPHERE>(f, -2.0f, 4.0f, 2.0f, 2.0f, s2, 4);
+    Sample2<FT_UNIT_SPHERE>(-2.0f, 4.0f, -2.0f, -2.0f, s0, 4);
+    Sample2<FT_UNIT_SPHERE>(-2.0f, 4.0f, 0.0f, 0.0f, s1, 4);
+    Sample2<FT_UNIT_SPHERE>(-2.0f, 4.0f, 2.0f, 2.0f, s2, 4);
 
     float xlow[6], ylow[6];
     float xhigh[6], yhigh[6];
@@ -128,13 +112,11 @@ TEST(UnitSphere, QEF2) {
         xlow, ylow, xhigh, yhigh,
         ens0, &n0);
     SolveIntersection2<FT_UNIT_SPHERE>(
-        f,
         xlow, ylow,
         xhigh, yhigh,
         ix0, iy0,
         n0);
     SampleGradient2<FT_UNIT_SPHERE>(
-        f,
         ix0, iy0,
         nx0, ny0,
         n0);
@@ -146,13 +128,11 @@ TEST(UnitSphere, QEF2) {
         xlow, ylow, xhigh, yhigh,
         ens1, &n1);
     SolveIntersection2<FT_UNIT_SPHERE>(
-        f,
         xlow, ylow,
         xhigh, yhigh,
         ix1, iy1,
         n1);
     SampleGradient2<FT_UNIT_SPHERE>(
-        f,
         ix1, iy1,
         nx1, ny1,
         n1);

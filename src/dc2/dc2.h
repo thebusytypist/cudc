@@ -6,8 +6,11 @@ enum FunctionType {
     cFunctionTypeCount
 };
 
-struct Function {
-    FunctionType mFunctionType;
-};
+template <FunctionType>
+bool DualContour2(
+    float xs, float xt,
+    float ys, float yt, int n,
+    float* p, int pcap,
+    int* edge, int ecap);
 
 #endif

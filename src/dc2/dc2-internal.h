@@ -15,7 +15,6 @@
 */
 template <FunctionType>
 void Sample2(
-    const Function& f,
     float xs, float xt,
     float ys, float yt,
     float* s, int n);
@@ -31,7 +30,6 @@ void Sample2(
 */
 template <FunctionType>
 void SampleGradient2(
-    const Function& f,
     const float* x, const float* y,
     float* ds0, float* ds1,
     int n);
@@ -86,7 +84,6 @@ void CollectIntersectionEdges2(
 */
 template <FunctionType>
 void SolveIntersection2(
-    const Function& f,
     const float* xlow, const float* ylow,
     const float* xhigh, const float* yhigh,
     float* x,
