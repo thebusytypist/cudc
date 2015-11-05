@@ -139,13 +139,13 @@ void SolveIntersection2<FT_UNIT_SPHERE>(
     }
 }
 
-void ConstructQEF2(
+bool ConstructQEF2(
     const float* ix0, const float* iy0,
     const float* ix1, const float* iy1,
     const float* nx0, const float* ny0,
     const float* nx1, const float* ny1,
     const int* ens0, const int* ens1, int n,
-    float* f, bool* h, int* m) {
+    float* f, bool* h, int* m, int capacity) {
     int count_total[] = {0, 1, 1, 2};
     int count_horizontal[] = {0, 1, 0, 1};
     int count_vertical[] = {0, 0, 1, 1};
@@ -222,12 +222,18 @@ void ConstructQEF2(
         float data[] = {
             f0, f1, f2, f3, f4, gx, gy
         };
+        
+        if (*m >= capacity)
+            return false;
+
         memcpy(f + i * 7, data, sizeof(data));
         *m += 1;
 
         start0 += c0;
         start1 += c2;
     }
+
+    return true;
 }
 
 void SolveQEF2(const float* f, float* p, int n) {
