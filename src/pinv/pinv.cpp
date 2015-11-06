@@ -16,44 +16,29 @@ bool SVD2(
     const float hw1pw2 = sqrt(e * e + h * h);
     const float hw1mw2 = sqrt(f * f + g * g);
 
-    // cos(y - b)
-    const float cymb = hw1mw2 != 0.0f ? f / hw1mw2 : 1.0f;
-
-    // cos(y + b)
-    const float cypb = hw1pw2 != 0.0f ? e / hw1pw2 : 1.0f;
-
-    // | cos(y) + cos(b) |
-    const float cc = sqrt((1 + cymb) * (1 + cypb));
-    // | cos(y) - cos(b) |
-    const float ss = sqrt((1 - cymb) * (1 - cypb));
-    // | sin(y) - sin(b) |
-    const float cs = sqrt((1 + cymb) * (1 - cypb));
-    // | sin(y) + sin(b) |
-    const float sc = sqrt((1 - cymb) * (1 + cypb));
-
-    const float cb = (cc - ss) * 0.5f;
-    const float sb = (sc + cs) * 0.5f;
-
-    U[0] = cb;
-    U[1] = -sb;
-    U[2] = sb;
-    U[3] = cb;
-
+    const float atangf = g == 0.0f && f == 0.0f ? 0.0f : atan2(g, f);
+    const float atanhe = h == 0.0f && e == 0.0f ? 0.0f : atan2(h, e);
+    
     S[0] = hw1pw2 + hw1mw2;
     S[1] = hw1pw2 - hw1mw2;
 
-    const float invS0 = 1.0f / S[0];
-    const float invS1 = 1.0f / S[1];
+    const float b = (atanhe - atangf) * 0.5f;
+    const float r = (atanhe + atangf) * 0.5f;
 
-    const float v0 = invS0 * U[0];
-    const float v1 = invS0 * U[2];
-    const float v2 = invS1 * U[1];
-    const float v3 = invS1 * U[3];
+    const float cb = cos(b);
+    const float sb = sin(b);
+    const float cr = cos(r);
+    const float sr = sin(r);
 
-    VT[0] = v0 * M[0] + v1 * M[2];
-    VT[1] = v0 * M[1] + v1 * M[3];
-    VT[2] = v2 * M[0] + v3 * M[2];
-    VT[3] = v2 * M[1] + v3 * M[3];
+    U[0] = cb;
+    U[1] = sb;
+    U[2] = -sb;
+    U[3] = cb;
+
+    VT[0] = cr;
+    VT[1] = sr;
+    VT[2] = -sr;
+    VT[3] = cr;
 
     return true;
 }
@@ -61,7 +46,7 @@ bool SVD2(
 bool PseudoInverse2(
     const float* M,
     float* pinv) {
-    const float EPS = 1e-12f;
+    const float EPS = 1e-7f;
 
     float U[4], S[2], VT[4];
     SVD2(M, U, S, VT);
