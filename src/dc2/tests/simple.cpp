@@ -91,11 +91,12 @@ TEST(UnitSphere, SolveIntersection2) {
 }
 
 TEST(UnitSphere, QEF2) {
-    float s0[4], s1[4], s2[4];
+    float s0[4], s1[4], s2[4], s3[4];
 
     Sample2<FT_UNIT_SPHERE>(-2.0f, 4.0f, -2.0f, -2.0f, s0, 4);
     Sample2<FT_UNIT_SPHERE>(-2.0f, 4.0f, 0.0f, 0.0f, s1, 4);
     Sample2<FT_UNIT_SPHERE>(-2.0f, 4.0f, 2.0f, 2.0f, s2, 4);
+    Sample2<FT_UNIT_SPHERE>(-2.0f, 4.0f, 4.0f, 4.0f, s3, 4);
 
     float xlow[6], ylow[6];
     float xhigh[6], yhigh[6];
@@ -159,4 +160,69 @@ TEST(UnitSphere, QEF2) {
     EXPECT_FLOAT_EQ(-1.0f, p[1]);
     EXPECT_FLOAT_EQ(1.0f, p[2]);
     EXPECT_FLOAT_EQ(-1.0f, p[3]);
+
+    // Check the second row.
+    CollectIntersectionEdges2(
+        -2.0f, 4.0f, 2.0f, 2.0f,
+        -2.0f, 4.0f, 4.0f, 4.0f,
+        s2, s3, 4,
+        xlow, ylow, xhigh, yhigh,
+        ens0, &n0);
+    SolveIntersection2<FT_UNIT_SPHERE>(
+        xlow, ylow,
+        xhigh, yhigh,
+        ix0, iy0,
+        n0);
+    SampleGradient2<FT_UNIT_SPHERE>(
+        ix0, iy0,
+        nx0, ny0,
+        n0);
+
+    r = ConstructQEF2(
+        ix1, iy1,
+        ix0, iy0,
+        nx1, ny1,
+        nx0, ny0,
+        ens1, ens0, 3,
+        qef, h, &m, 2);
+    EXPECT_TRUE(r);
+    EXPECT_EQ(0, h[0]);
+    EXPECT_EQ(1, h[1]);
+
+    SolveQEF2(qef, p, m);
+
+    EXPECT_EQ(2, m);
+    EXPECT_FLOAT_EQ(-1.0f, p[0]);
+    EXPECT_FLOAT_EQ(1.0f, p[1]);
+    EXPECT_FLOAT_EQ(1.0f, p[2]);
+    EXPECT_FLOAT_EQ(1.0f, p[3]);
+}
+
+TEST(UnitSphere, DualContour2) {
+    const int pcap = 4;
+    int pcnt = 0;
+    float p[2 * pcap];
+
+    const int ecap = 4;
+    int ecnt = 0;
+    int edge[2 * ecap];
+
+    bool r = DualContour2(FT_UNIT_SPHERE,
+        -2.0f, 2.0f,
+        -2.0f, 2.0f, 3,
+        p, pcap, &pcnt,
+        edge, ecap, &ecnt);
+
+    EXPECT_TRUE(r);
+
+    EXPECT_EQ(4, pcnt);
+    float ep[8] = {
+        -1.0f, -1.0f,
+        1.0f, -1.0f,
+        -1.0f, 1.0f,
+        1.0f, 1.0f
+    };
+    for (int i = 0; i < 8; ++i) {
+        EXPECT_FLOAT_EQ(ep[i], p[i]);
+    }
 }

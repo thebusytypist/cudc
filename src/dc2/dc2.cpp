@@ -149,6 +149,7 @@ bool ConstructQEF2(
         int c1 = count_horizontal[ens1[i]];
         int c2 = count_total[ens1[i]];
         int c3 = count_vertical[ens0[i + 1]];
+        int c4 = count_horizontal[ens0[i + 1]];
 
         if (c0 + c1 + c3 < 2){
             h[i] = -1;
@@ -192,10 +193,10 @@ bool ConstructQEF2(
         }
 
         for (int j = 0; j < c3; ++j) {
-            const float nx = nx0[start0 + c0 + j];
-            const float ny = ny0[start0 + c0 + j];
-            const float ix = ix0[start0 + c0 + j];
-            const float iy = iy0[start0 + c0 + j];
+            const float nx = nx0[start0 + c0 + c4 + j];
+            const float ny = ny0[start0 + c0 + c4 + j];
+            const float ix = ix0[start0 + c0 + c4 + j];
+            const float iy = iy0[start0 + c0 + c4 + j];
             A[(c0 + c1 + j) * 2] = nx;
             A[(c0 + c1 + j) * 2 + 1] = ny;
             b[c0 + c1 + j] = nx * ix + ny * iy;
@@ -252,35 +253,186 @@ void SolveQEF2(const float* f, float* p, int n) {
     }
 }
 
+inline int NEXTS(int r) {
+    return (r + 1) % 3;
+}
+inline int NNEXTS(int r) {
+    return (r + 2) % 3;
+}
+inline int NEXTR(int r) {
+    return 1 - r;
+}
+
 template <FunctionType FT>
-bool DualContour2(
+bool GenericDualContour2(
     float xs, float xt,
     float ys, float yt, int n,
-    float* p, int pcap,
-    int* edge, int ecap) {
+    float* p, int pcap, int* pcnt,
+    int* edge, int ecap, int* ecnt) {
     int nsamples = n + 1;
     int ncells = n;
-    const float xstep = (xt - xs) / n;
-    const float ystep = (xt - xs) / n;
+    const float xstep = (xt - xs) / (n - 1);
+    const float ystep = (xt - xs) / (n - 1);
 
-    float* s = (float*)malloc(sizeof(float) * nsamples * 3);
-    const float* s0 = s;
-    const float* s1 = s + nsamples;
-    const float* s2 = s1 + nsamples;
+    // Allocate 3 rows of samples.
+    float* const S = (float*)malloc(sizeof(float) * nsamples * 3);
+    float* const s[3] = {
+        S,
+        S + nsamples,
+        S + nsamples * 2
+    };
 
-    // Prepare three rows of samples.
+    // Initialize two rows of samples.
     Sample2<FT>(
         xs, xt + xstep,
         ys, ys,
-        s0, nsamples);
+        s[0], nsamples);
     Sample2<FT>(
         xs, xt + xstep,
         ys + ystep, ys + ystep,
-        s1, nsamples);
-    Sample2<FT>(
-        xs, xt + xstep,
-        ys + ystep * 2.0f, ys + ystep * 2.0f,
-        s2, nsamples);
+        s[1], nsamples);
 
+    // Allocate arrays for xlow, ylow, xhigh, yhigh.
+    // One cell contains 2 intersected edges at most.
+    float* const E = (float*)malloc(sizeof(float) * ncells * 2 * 4);
+    float* const xlow = E;
+    float* const ylow = E + ncells * 2;
+    float* const xhigh = ylow + ncells * 2;
+    float* const yhigh = xhigh + ncells * 2;
+
+    // Allocate 4 arrays for ix0, ix1, iy0, iy1.
+    // One cell contains 2 intersections at most.
+    float* const I = (float*)malloc(sizeof(float) * ncells * 2 * 4);
+    float* const ix[2] = {
+        I,
+        I + ncells * 2 * 2
+    };
+    float* const iy[2] = {
+        I + ncells * 2,
+        I + ncells * 2 * 3
+    };
+
+    // Allocate 4 arrays for nx0, nx1, ny0, ny1.
+    // One cell contains 2 intersections at most.
+    float* const N = (float*)malloc(sizeof(float) * ncells * 2 * 4);
+    float* const nx[2] = {
+        N,
+        N + ncells * 2 * 2
+    };
+    float* const ny[2] = {
+        N + ncells * 2,
+        N + ncells * 2 * 3
+    };
+
+    // Allocate arrays for 2 rows of intersected edges count.
+    int* const ENS = (int*)malloc(sizeof(int) * ncells * 2);
+    int* const ens[2] = {
+        ENS,
+        ENS + ncells
+    };
+    int en[2];
+
+    // Allocate arrays for 2 rows of index of generated mesh vertices.
+    int* const H = (int*)malloc(sizeof(int) * ncells * 2);
+    int* const h[2] = {
+        H,
+        H + ncells
+    };
+
+    // Allocate arrays for generated mesh vertices.
+    float* const V = (float*)malloc(sizeof(float) * 2 * ncells);
+
+    // Allocate buffers for QEF coefficients.
+    const int cap = 4 * ncells;
+    float* const QEF = (float*)malloc(sizeof(float) * 7 * cap);
+
+    // Initialize the first row of intersections.
+    CollectIntersectionEdges2(
+        xs, xt + xstep, ys, ys,
+        xs, xt + xstep, ys + ystep, ys + ystep,
+        s[0], s[1], nsamples,
+        xlow, ylow, xhigh, yhigh,
+        ens[0], &en[0]);
+
+    SolveIntersection2<FT>(
+        xlow, ylow,
+        xhigh, yhigh,
+        ix[0], iy[0], en[0]);
+
+    SampleGradient2<FT>(
+        ix[0], iy[0],
+        nx[0], ny[0],
+        en[0]);
+
+    float prevy = ys + ystep;
+    float y = prevy + ystep;
+    *pcnt = 0;
+    *ecnt = 0;
+    for (int l = 0; l < n - 1; ++l, y += ystep) {
+        Sample2<FT>(
+            xs, xt + xstep,
+            y, y,
+            s[NNEXTS(l)], nsamples);
+
+        CollectIntersectionEdges2(
+            xs, xt + xstep, prevy, prevy,
+            xs, xt + xstep, y, y,
+            s[NEXTS(l)], s[NNEXTS(l)], nsamples,
+            xlow, ylow, xhigh, yhigh,
+            ens[NEXTR(l)], &en[NEXTR(l)]);
+
+        SolveIntersection2<FT>(
+            xlow, ylow,
+            xhigh, yhigh,
+            ix[NEXTR(l)], iy[NEXTR(l)], en[NEXTR(l)]);
+
+        SampleGradient2<FT>(
+            ix[NEXTR(l)], iy[NEXTR(l)],
+            nx[NEXTR(l)], ny[NEXTR(l)],
+            en[NEXTR(l)]);
+
+        int nQEF;
+        bool result = ConstructQEF2(
+            ix[l], iy[l],
+            ix[NEXTR(l)], iy[NEXTR(l)],
+            nx[l], ny[l],
+            nx[NEXTR(l)], ny[NEXTR(l)],
+            ens[l], ens[NEXTR(l)],
+            ncells,
+            QEF, h[NEXTR(l)], &nQEF, cap);
+        if (!result)
+            return false;
+
+        if (pcap < nQEF)
+            return false;
+        SolveQEF2(QEF, p + 2 * (*pcnt), nQEF);
+        *pcnt += nQEF;
+        pcap -= nQEF;
+    }
+
+    free(S);
+    free(I);
+    free(N);
+    free(E);
+    free(ENS);
+    free(H);
+    free(V);
+    free(QEF);
     return true;
+}
+
+bool DualContour2(
+    FunctionType ft,
+    float xs, float xt,
+    float ys, float yt, int n,
+    float* p, int pcap, int* pcnt,
+    int* edge, int ecap, int* ecnt) {
+    switch(ft) {
+        case FT_UNIT_SPHERE:
+            return GenericDualContour2<FT_UNIT_SPHERE>(
+                xs, xt, ys, yt, n, p, pcap, pcnt, edge, ecap, ecnt);
+        default:
+            assert(false);
+            return false;
+    }
 }
