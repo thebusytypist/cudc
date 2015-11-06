@@ -218,7 +218,7 @@ void ConstructQEF2(
             f0, f1, f2, f3, f4, gx, gy
         };
 
-        memcpy(f + i * 7, data, sizeof(data));
+        memcpy(f + *m * 7, data, sizeof(data));
         *m += 1;
 
         start0 += c0;
