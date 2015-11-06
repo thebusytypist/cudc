@@ -122,8 +122,10 @@ void SolveIntersection2<FT_UNIT_SPHERE>(
             }
             else {
                 xl = cx;
-                yl = cx;
+                yl = cy;
             }
+            cx = (xl + xh) * 0.5f;
+            cy = (yl + yh) * 0.5f;
             v = cx * cx + cy * cy - 1.0f;
         }
         x[i] = cx;
