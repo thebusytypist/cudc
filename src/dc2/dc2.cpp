@@ -401,11 +401,10 @@ bool GenericDualContour2(
             ncells,
             QEF, h[NEXTR(l)], &nQEF);
 
-        if (pcap < nQEF)
+        if (*pcnt + nQEF > pcap)
             return false;
         SolveQEF2(QEF, p + 2 * (*pcnt), nQEF);
         *pcnt += nQEF;
-        pcap -= nQEF;
 
         // Generate horizontal edges.
         int base1 = *pcnt - nQEF;
