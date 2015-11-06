@@ -18,7 +18,15 @@ int main(int argc, char* argv[]) {
         p, pcap, &pcnt,
         edges, ecap, &ecnt);
 
-    printf("pcnt: %d\necnt: %d\n", pcnt, ecnt);
+    printf("%d %d\n", pcnt, ecnt);
+
+    for (int i = 0; i < pcnt; ++i) {
+        printf("%f %f\n", p[i * 2], p[2 * i + 1]);
+    }
+
+    for (int i = 0; i < ecnt; ++i) {
+        printf("%d %d\n", edges[i * 2], edges[i * 2 + 1]);
+    }
 
     return 0;
 }

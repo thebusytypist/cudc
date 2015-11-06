@@ -1,1 +1,1 @@
-add_subdirectory(dc2-ply)
+add_subdirectory(dc2-plain)
