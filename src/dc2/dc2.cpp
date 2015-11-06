@@ -103,7 +103,7 @@ void SolveIntersection2<FT_UNIT_SPHERE>(
     float* x,
     float* y,
     int n) {
-    const float eps = 1e-12f;
+    const float eps = 1e-7f;
 
     for (int i = 0; i < n; ++i) {
         float xh = xhigh[i];
@@ -272,7 +272,7 @@ bool GenericDualContour2(
     int nsamples = n + 1;
     int ncells = n;
     const float xstep = (xt - xs) / (n - 1);
-    const float ystep = (xt - xs) / (n - 1);
+    const float ystep = (yt - ys) / (n - 1);
 
     // Allocate 3 rows of samples.
     float* const S = (float*)malloc(sizeof(float) * nsamples * 3);
@@ -370,7 +370,7 @@ bool GenericDualContour2(
     int last = 0;
     *pcnt = 0;
     *ecnt = 0;
-    for (int l = 0; l < n - 1; ++l, y += ystep) {
+    for (int l = 0; l < n - 1; ++l, prevy = y, y += ystep) {
         Sample2<FT>(
             xs, xt + xstep,
             y, y,
