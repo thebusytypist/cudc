@@ -6,4 +6,5 @@ target_include_directories(dc2 PUBLIC
 target_link_libraries(dc2
     pinv)
 
+add_subdirectory(demos)
 add_subdirectory(tests)
