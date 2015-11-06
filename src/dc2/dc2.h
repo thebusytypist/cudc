@@ -11,6 +11,6 @@ bool DualContour2(
     float xs, float xt,
     float ys, float yt, int n,
     float* p, int pcap, int* pcnt,
-    int* edge, int ecap, int* ecnt);
+    int* edges, int ecap, int* ecnt);
 
 #endif

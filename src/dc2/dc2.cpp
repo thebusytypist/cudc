@@ -453,11 +453,11 @@ bool DualContour2(
     float xs, float xt,
     float ys, float yt, int n,
     float* p, int pcap, int* pcnt,
-    int* edge, int ecap, int* ecnt) {
+    int* edges, int ecap, int* ecnt) {
     switch(ft) {
         case FT_UNIT_SPHERE:
             return GenericDualContour2<FT_UNIT_SPHERE>(
-                xs, xt, ys, yt, n, p, pcap, pcnt, edge, ecap, ecnt);
+                xs, xt, ys, yt, n, p, pcap, pcnt, edges, ecap, ecnt);
         default:
             assert(false);
             return false;
