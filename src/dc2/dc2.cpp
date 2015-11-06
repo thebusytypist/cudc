@@ -260,7 +260,10 @@ inline int NNEXTS(int r) {
     return (r + 2) % 3;
 }
 inline int NEXTR(int r) {
-    return 1 - r;
+    return (r + 1) % 2;
+}
+inline int CURR(int r) {
+    return r % 2;
 }
 
 template <FunctionType FT>
@@ -268,7 +271,7 @@ bool GenericDualContour2(
     float xs, float xt,
     float ys, float yt, int n,
     float* p, int pcap, int* pcnt,
-    int* edge, int ecap, int* ecnt) {
+    int* edges, int ecap, int* ecnt) {
     int nsamples = n + 1;
     int ncells = n;
     const float xstep = (xt - xs) / (n - 1);
@@ -366,6 +369,8 @@ bool GenericDualContour2(
 
     float prevy = ys + ystep;
     float y = prevy + ystep;
+    // Last count of generated vertices.
+    int last = 0;
     *pcnt = 0;
     *ecnt = 0;
     for (int l = 0; l < n - 1; ++l, y += ystep) {
@@ -393,11 +398,11 @@ bool GenericDualContour2(
 
         int nQEF;
         bool result = ConstructQEF2(
-            ix[l], iy[l],
+            ix[CURR(l)], iy[CURR(l)],
             ix[NEXTR(l)], iy[NEXTR(l)],
-            nx[l], ny[l],
+            nx[CURR(l)], ny[CURR(l)],
             nx[NEXTR(l)], ny[NEXTR(l)],
-            ens[l], ens[NEXTR(l)],
+            ens[CURR(l)], ens[NEXTR(l)],
             ncells,
             QEF, h[NEXTR(l)], &nQEF, cap);
         if (!result)
@@ -408,6 +413,36 @@ bool GenericDualContour2(
         SolveQEF2(QEF, p + 2 * (*pcnt), nQEF);
         *pcnt += nQEF;
         pcap -= nQEF;
+
+        // Generate horizontal edges.
+        int base1 = *pcnt - nQEF;
+        int* const h1 = h[NEXTR(l)];
+        for (int c = 1; c < ncells - 1; ++c) {
+            if (h1[c] != -1 && h1[c - 1] != -1) {
+                if (*ecnt + 1 > ecap)
+                    return false;
+                edges[*ecnt * 2] = base1 + h1[c];
+                edges[*ecnt * 2 + 1] = base1 + h1[c - 1];
+                *ecnt += 1;
+            }
+        }
+
+        // Generate vertical edges.
+        int base0 = base1 - last;
+        int* const h0 = h[CURR(l)];
+        if (l != 0) {
+            for (int c = 0; c < ncells - 1; ++c) {
+                if (h1[c] != -1 && h0[c] != -1) {
+                    if (*ecnt + 1 > ecap)
+                        return false;
+                    edges[*ecnt * 2] = base1 + h1[c];
+                    edges[*ecnt * 2 + 1] = base0 + h0[c];
+                    *ecnt += 1;
+                }
+            }
+        }
+
+        last = nQEF;
     }
 
     free(S);

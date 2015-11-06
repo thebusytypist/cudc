@@ -205,16 +205,17 @@ TEST(UnitSphere, DualContour2) {
 
     const int ecap = 4;
     int ecnt = 0;
-    int edge[2 * ecap];
+    int edges[2 * ecap];
 
     bool r = DualContour2(FT_UNIT_SPHERE,
         -2.0f, 2.0f,
         -2.0f, 2.0f, 3,
         p, pcap, &pcnt,
-        edge, ecap, &ecnt);
+        edges, ecap, &ecnt);
 
     EXPECT_TRUE(r);
 
+    // Check vertices.
     EXPECT_EQ(4, pcnt);
     float ep[8] = {
         -1.0f, -1.0f,
@@ -224,5 +225,17 @@ TEST(UnitSphere, DualContour2) {
     };
     for (int i = 0; i < 8; ++i) {
         EXPECT_FLOAT_EQ(ep[i], p[i]);
+    }
+
+    // Check edges.
+    EXPECT_EQ(4, ecnt);
+    int ee[8] = {
+        1, 0,
+        3, 2,
+        2, 0,
+        3, 1
+    };
+    for (int i = 0; i < 8; ++i) {
+        EXPECT_EQ(ee[i], edges[i]);
     }
 }
