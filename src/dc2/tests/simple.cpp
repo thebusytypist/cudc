@@ -141,14 +141,13 @@ TEST(UnitSphere, QEF2) {
     float qef[7 * 2];
     int h[2];
     int m = 0;
-    bool r = ConstructQEF2(
+    ConstructQEF2(
         ix0, iy0,
         ix1, iy1,
         nx0, ny0,
         nx1, ny1,
         ens0, ens1, 3,
-        qef, h, &m, 2);
-    EXPECT_TRUE(r);
+        qef, h, &m);
     EXPECT_EQ(0, h[0]);
     EXPECT_EQ(1, h[1]);
 
@@ -178,14 +177,13 @@ TEST(UnitSphere, QEF2) {
         nx0, ny0,
         n0);
 
-    r = ConstructQEF2(
+    ConstructQEF2(
         ix1, iy1,
         ix0, iy0,
         nx1, ny1,
         nx0, ny0,
         ens1, ens0, 3,
-        qef, h, &m, 2);
-    EXPECT_TRUE(r);
+        qef, h, &m);
     EXPECT_EQ(0, h[0]);
     EXPECT_EQ(1, h[1]);
 
