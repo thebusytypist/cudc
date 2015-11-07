@@ -103,7 +103,7 @@ void SolveIntersection2<FT_UNIT_SPHERE>(
     float* x,
     float* y,
     int n) {
-    const float eps = 1e-7f;
+    const float eps = 1e-6f;
 
     for (int i = 0; i < n; ++i) {
         float xh = xhigh[i];
