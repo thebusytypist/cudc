@@ -10,9 +10,9 @@ int main(int argc, char* argv[]) {
     float start, end;
     int ticks;
     assert(argc == 4);
-    sscanf_s(argv[1], "%f", &start);
-    sscanf_s(argv[2], "%f", &end);
-    sscanf_s(argv[3], "%d", &ticks);
+    sscanf(argv[1], "%f", &start);
+    sscanf(argv[2], "%f", &end);
+    sscanf(argv[3], "%d", &ticks);
 
     float p[pcap * 2];
     int edges[ecap * 2];
