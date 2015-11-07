@@ -1,4 +1,5 @@
 #include <dc2.h>
+#include <cassert>
 #include <cstdio>
 using namespace std;
 
@@ -6,17 +7,25 @@ int main(int argc, char* argv[]) {
     const int pcap = 1024;
     const int ecap = 1024;
 
+    float start, end;
+    int ticks;
+    assert(argc == 4);
+    sscanf_s(argv[1], "%f", &start);
+    sscanf_s(argv[2], "%f", &end);
+    sscanf_s(argv[3], "%d", &ticks);
+
     float p[pcap * 2];
     int edges[ecap * 2];
 
     int pcnt, ecnt;
 
     bool r = DualContour2(FT_UNIT_SPHERE,
-        -2.0f, 2.0f,
-        -2.0f, 2.0f,
-        4,
+        start, end,
+        start, end,
+        ticks,
         p, pcap, &pcnt,
         edges, ecap, &ecnt);
+    assert(r);
 
     printf("%d %d\n", pcnt, ecnt);
 
