@@ -194,8 +194,8 @@ void CollectIntersectionEdges2(
     *en = top;
 }
 
-template <>
-void SolveIntersection2<FT_UNIT_SPHERE>(
+template <FunctionType FT>
+void SolveIntersection2(
     const float* xlow, const float* ylow,
     const float* xhigh, const float* yhigh,
     float* x,
@@ -203,32 +203,213 @@ void SolveIntersection2<FT_UNIT_SPHERE>(
     int n) {
     const float eps = 1e-6f;
 
-    for (int i = 0; i < n; ++i) {
-        float xh = xhigh[i];
-        float xl = xlow[i];
-        float yh = yhigh[i];
-        float yl = ylow[i];
+    int n4 = n / 4;
+    int m = n4 << 2;
+    int rn = n - m;
 
-        float cx = (xl + xh) * 0.5f;
-        float cy = (yl + yh) * 0.5f;
-        float v = cx * cx + cy * cy - 1.0f;
+    float xlreg[4], xhreg[4];
+    float ylreg[4], yhreg[4];
+    float cxreg[4], cyreg[4];
+    float vreg[4];
+    int cmp[4];
+    for (int i = 0; i < m; i += 4) {
+        xlreg[0] = xlow[i];
+        xlreg[1] = xlow[i + 1];
+        xlreg[2] = xlow[i + 2];
+        xlreg[3] = xlow[i + 3];
 
-        while (abs(v) >= eps) {
-            if (v > 0) {
-                xh = cx;
-                yh = cy;
+        xhreg[0] = xhigh[i];
+        xhreg[1] = xhigh[i + 1];
+        xhreg[2] = xhigh[i + 2];
+        xhreg[3] = xhigh[i + 3];
+
+        ylreg[0] = ylow[i];
+        ylreg[1] = ylow[i + 1];
+        ylreg[2] = ylow[i + 2];
+        ylreg[3] = ylow[i + 3];
+
+        yhreg[0] = yhigh[i];
+        yhreg[1] = yhigh[i + 1];
+        yhreg[2] = yhigh[i + 2];
+        yhreg[3] = yhigh[i + 3];
+
+        cxreg[0] = (xlreg[0] + xhreg[0]) * 0.5f;
+        cxreg[1] = (xlreg[1] + xhreg[1]) * 0.5f;
+        cxreg[2] = (xlreg[2] + xhreg[2]) * 0.5f;
+        cxreg[3] = (xlreg[3] + xhreg[3]) * 0.5f;
+
+        cyreg[0] = (ylreg[0] + yhreg[0]) * 0.5f;
+        cyreg[1] = (ylreg[1] + yhreg[1]) * 0.5f;
+        cyreg[2] = (ylreg[2] + yhreg[2]) * 0.5f;
+        cyreg[3] = (ylreg[3] + yhreg[3]) * 0.5f;
+
+        Sample2<FT>(cxreg, cyreg, 0.0f, 0.0f, vreg, 4);
+
+        while (
+            abs(vreg[0]) >= eps ||
+            abs(vreg[1]) >= eps ||
+            abs(vreg[2]) >= eps ||
+            abs(vreg[3]) >= eps) {
+            cmp[0] = vreg[0] > 0.0f;
+            cmp[1] = vreg[1] > 0.0f;
+            cmp[2] = vreg[2] > 0.0f;
+            cmp[3] = vreg[3] > 0.0f;
+
+            if (cmp[0]) {
+                xhreg[0] = cxreg[0];
+                yhreg[0] = cyreg[0];
             }
             else {
-                xl = cx;
-                yl = cy;
+                xlreg[0] = cxreg[0];
+                ylreg[0] = cyreg[0];
             }
-            cx = (xl + xh) * 0.5f;
-            cy = (yl + yh) * 0.5f;
-            v = cx * cx + cy * cy - 1.0f;
+
+            if (cmp[1]) {
+                xhreg[1] = cxreg[1];
+                yhreg[1] = cyreg[1];
+            }
+            else {
+                xlreg[1] = cxreg[1];
+                ylreg[1] = cyreg[1];
+            }
+
+            if (cmp[2]) {
+                xhreg[2] = cxreg[2];
+                yhreg[2] = cyreg[2];
+            }
+            else {
+                xlreg[2] = cxreg[2];
+                ylreg[2] = cyreg[2];
+            }
+
+            if (cmp[3]) {
+                xhreg[3] = cxreg[3];
+                yhreg[3] = cyreg[3];
+            }
+            else {
+                xlreg[3] = cxreg[3];
+                ylreg[3] = cyreg[3];
+            }
+
+            cxreg[0] = (xlreg[0] + xhreg[0]) * 0.5f;
+            cxreg[1] = (xlreg[1] + xhreg[1]) * 0.5f;
+            cxreg[2] = (xlreg[2] + xhreg[2]) * 0.5f;
+            cxreg[3] = (xlreg[3] + xhreg[3]) * 0.5f;
+
+            cyreg[0] = (ylreg[0] + yhreg[0]) * 0.5f;
+            cyreg[1] = (ylreg[1] + yhreg[1]) * 0.5f;
+            cyreg[2] = (ylreg[2] + yhreg[2]) * 0.5f;
+            cyreg[3] = (ylreg[3] + yhreg[3]) * 0.5f;
+
+            Sample2<FT>(cxreg, cyreg, 0.0f, 0.0f, vreg, 4);
+        } // End of binary search.
+
+        x[i] = cxreg[0];
+        x[i + 1] = cxreg[1];
+        x[i + 2] = cxreg[2];
+        x[i + 3] = cxreg[3];
+
+        y[i] = cyreg[0];
+        y[i + 1] = cyreg[1];
+        y[i + 2] = cyreg[2];
+        y[i + 3] = cyreg[3];
+    } // End of 4x cases.
+
+    // Handle the boundary cases.
+    xlreg[0] = 0 < rn ? xlow[m] : 0.0f;
+    xlreg[1] = 1 < rn ? xlow[m + 1] : 0.0f;
+    xlreg[2] = 2 < rn ? xlow[m + 2] : 0.0f;
+    xlreg[3] = 0.0f;
+
+    xhreg[0] = 0 < rn ? xhigh[m] : 0.0f;
+    xhreg[1] = 1 < rn ? xhigh[m + 1] : 0.0f;
+    xhreg[2] = 2 < rn ? xhigh[m + 2] : 0.0f;
+    xhreg[3] = 0.0f;
+
+    ylreg[0] = 0 < rn ? ylow[m] : 0.0f;
+    ylreg[1] = 1 < rn ? ylow[m + 1] : 0.0f;
+    ylreg[2] = 2 < rn ? ylow[m + 2] : 0.0f;
+    ylreg[3] = 0.0f;
+
+    yhreg[0] = 0 < rn ? yhigh[m] : 0.0f;
+    yhreg[1] = 1 < rn ? yhigh[m + 1] : 0.0f;
+    yhreg[2] = 2 < rn ? yhigh[m + 2] : 0.0f;
+    yhreg[3] = 0.0f;
+
+    cxreg[0] = (xlreg[0] + xhreg[0]) * 0.5f;
+    cxreg[1] = (xlreg[1] + xhreg[1]) * 0.5f;
+    cxreg[2] = (xlreg[2] + xhreg[2]) * 0.5f;
+    cxreg[3] = (xlreg[3] + xhreg[3]) * 0.5f;
+
+    cyreg[0] = (ylreg[0] + yhreg[0]) * 0.5f;
+    cyreg[1] = (ylreg[1] + yhreg[1]) * 0.5f;
+    cyreg[2] = (ylreg[2] + yhreg[2]) * 0.5f;
+    cyreg[3] = (ylreg[3] + yhreg[3]) * 0.5f;
+
+    Sample2<FT>(cxreg, cyreg, 0.0f, 0.0f, vreg, 4);
+
+    while (
+        0 < rn && abs(vreg[0]) >= eps ||
+        1 < rn && abs(vreg[1]) >= eps ||
+        2 < rn && abs(vreg[2]) >= eps) {
+        cmp[0] = vreg[0] > 0.0f;
+        cmp[1] = vreg[1] > 0.0f;
+        cmp[2] = vreg[2] > 0.0f;
+        cmp[3] = vreg[3] > 0.0f;
+
+        if (cmp[0]) {
+            xhreg[0] = cxreg[0];
+            yhreg[0] = cyreg[0];
         }
-        x[i] = cx;
-        y[i] = cy;
-    }
+        else {
+            xlreg[0] = cxreg[0];
+            ylreg[0] = cyreg[0];
+        }
+
+        if (cmp[1]) {
+            xhreg[1] = cxreg[1];
+            yhreg[1] = cyreg[1];
+        }
+        else {
+            xlreg[1] = cxreg[1];
+            ylreg[1] = cyreg[1];
+        }
+
+        if (cmp[2]) {
+            xhreg[2] = cxreg[2];
+            yhreg[2] = cyreg[2];
+        }
+        else {
+            xlreg[2] = cxreg[2];
+            ylreg[2] = cyreg[2];
+        }
+
+        cxreg[0] = (xlreg[0] + xhreg[0]) * 0.5f;
+        cxreg[1] = (xlreg[1] + xhreg[1]) * 0.5f;
+        cxreg[2] = (xlreg[2] + xhreg[2]) * 0.5f;
+        cxreg[3] = (xlreg[3] + xhreg[3]) * 0.5f;
+
+        cyreg[0] = (ylreg[0] + yhreg[0]) * 0.5f;
+        cyreg[1] = (ylreg[1] + yhreg[1]) * 0.5f;
+        cyreg[2] = (ylreg[2] + yhreg[2]) * 0.5f;
+        cyreg[3] = (ylreg[3] + yhreg[3]) * 0.5f;
+
+        Sample2<FT>(cxreg, cyreg, 0.0f, 0.0f, vreg, 4);
+    } // End of binary search.
+
+    if (0 < rn)
+        x[m] = cxreg[0];
+    if (1 < rn)
+        x[m + 1] = cxreg[1];
+    if (2 < rn)
+        x[m + 2] = cxreg[2];
+
+    if (0 < rn)
+        y[m] = cyreg[0];
+    if (1 < rn)
+        y[m + 1] = cyreg[1];
+    if (2 < rn)
+        y[m + 2] = cyreg[2];
 }
 
 void ConstructQEF2(
