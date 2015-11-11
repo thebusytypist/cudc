@@ -22,19 +22,117 @@ void Sample2<FT_UNIT_SPHERE>(
 }
 
 template <>
-void SampleGradient2<FT_UNIT_SPHERE>(
+void Sample2<FT_UNIT_SPHERE>(
+    const float* x,
+    const float* y,
+    float dx,
+    float dy,
+    float* s,
+    int n) {
+    for (int i = 0; i < n; ++i) {
+        const float xi = x[i] + dx;
+        const float yi = y[i] + dy;
+        s[i] = xi * xi + yi * yi - 1.0f;
+    }
+}
+
+template <FunctionType FT>
+void SampleGradient2(
     const float* x, const float* y,
     float* ds0, float* ds1,
     int n) {
     const float dh = 1e-5f;
+    const float rev2dh = 0.5f / dh;
 
-    for (int i = 0; i < n; ++i) {
-        ds0[i] = 2 * x[i];
-        ds1[i] = 2 * y[i];
-        float l = sqrt(ds0[i] * ds0[i] + ds1[i] * ds1[i]);
-        ds0[i] /= l;
-        ds1[i] /= l;
+    int n4 = n / 4;
+    int m = n4 << 2;
+    int rn = n - m;
+
+    float xreg[4], yreg[4];
+    float sreg0[4], sreg1[4];
+    float lreg[4];
+    for (int i = 0; i < m; i += 4) {
+        xreg[0] = x[i];
+        xreg[1] = x[i + 1];
+        xreg[2] = x[i + 2];
+        xreg[3] = x[i + 3];
+
+        yreg[0] = y[i];
+        yreg[1] = y[i + 1];
+        yreg[2] = y[i + 2];
+        yreg[3] = y[i + 3];
+
+        // Compute df/dx.
+        Sample2<FT>(xreg, yreg, dh, 0.0f, sreg1, 4);
+        Sample2<FT>(xreg, yreg, -dh, 0.0f, sreg0, 4);
+        ds0[i] = (sreg1[0] - sreg0[0]) * rev2dh;
+        ds0[i + 1] = (sreg1[1] - sreg0[1]) * rev2dh;
+        ds0[i + 2] = (sreg1[2] - sreg0[2]) * rev2dh;
+        ds0[i + 3] = (sreg1[3] - sreg0[3]) * rev2dh;
+
+        // Compute df/dy.
+        Sample2<FT>(xreg, yreg, 0.0f, dh, sreg1, 4);
+        Sample2<FT>(xreg, yreg, 0.0f, -dh, sreg0, 4);
+        ds1[i] = (sreg1[0] - sreg0[0]) * rev2dh;
+        ds1[i + 1] = (sreg1[1] - sreg0[1]) * rev2dh;
+        ds1[i + 2] = (sreg1[2] - sreg0[2]) * rev2dh;
+        ds1[i + 3] = (sreg1[3] - sreg0[3]) * rev2dh;
+
+        // Normalize the gradient vector.
+        lreg[0] = sqrt(ds0[i] * ds0[i] + ds1[i] * ds1[i]);
+        lreg[1] = sqrt(ds0[i + 1] * ds0[i + 1] + ds1[i + 1] * ds1[i + 1]);
+        lreg[2] = sqrt(ds0[i + 2] * ds0[i + 2] + ds1[i + 2] * ds1[i + 2]);
+        lreg[3] = sqrt(ds0[i + 3] * ds0[i + 3] + ds1[i + 3] * ds1[i + 3]);
+
+        ds0[i] /= lreg[0]; ds1[i] /= lreg[0];
+        ds0[i + 1] /= lreg[1]; ds1[i + 1] /= lreg[1];
+        ds0[i + 2] /= lreg[2]; ds1[i + 2] /= lreg[2];
+        ds0[i + 3] /= lreg[3]; ds1[i + 3] /= lreg[3];
     }
+
+    // Handle the boundary case.
+    xreg[0] = 0 < rn ? x[m] : 0.0f;
+    xreg[1] = 1 < rn ? x[m + 1] : 0.0f;
+    xreg[2] = 2 < rn ? x[m + 2] : 0.0f;
+    xreg[3] = 0.0f;
+
+    yreg[0] = 0 < rn ? y[m] : 0.0f;
+    yreg[1] = 1 < rn ? y[m + 1] : 0.0f;
+    yreg[2] = 2 < rn ? y[m + 2] : 0.0f;
+    yreg[3] = 0.0f;
+
+    // Compute df/dx.
+    Sample2<FT>(xreg, yreg, dh, 0.0f, sreg1, 4);
+    Sample2<FT>(xreg, yreg, -dh, 0.0f, sreg0, 4);
+    if (0 < rn)
+        ds0[m] = (sreg1[0] - sreg0[0]) * rev2dh;
+    if (1 < rn)
+        ds0[m + 1] = (sreg1[1] - sreg0[1]) * rev2dh;
+    if (2 < rn)
+        ds0[m + 2] = (sreg1[2] - sreg0[2]) * rev2dh;
+
+    // Compute df/dy.
+    Sample2<FT>(xreg, yreg, 0.0f, dh, sreg1, 4);
+    Sample2<FT>(xreg, yreg, 0.0f, -dh, sreg0, 4);
+    if (0 < rn)
+        ds1[m] = (sreg1[0] - sreg0[0]) * rev2dh;
+    if (1 < rn)
+        ds1[m + 1] = (sreg1[1] - sreg0[1]) * rev2dh;
+    if (2 < rn)
+        ds1[m + 2] = (sreg1[2] - sreg0[2]) * rev2dh;
+
+    // Normalize the gradient vector.
+    lreg[0] = sqrt(ds0[m] * ds0[m] + ds1[m] * ds1[m]);
+    lreg[1] = sqrt(ds0[m + 1] * ds0[m + 1] + ds1[m + 1] * ds1[m + 1]);
+    lreg[2] = sqrt(ds0[m + 2] * ds0[m + 2] + ds1[m + 2] * ds1[m + 2]);
+    lreg[3] = sqrt(ds0[m + 3] * ds0[m + 3] + ds1[m + 3] * ds1[m + 3]);
+
+    if (0 < rn)
+        ds0[m] /= lreg[0]; ds1[m] /= lreg[0];
+    if (1 < rn)
+        ds0[m + 1] /= lreg[1]; ds1[m + 1] /= lreg[1];
+    if (2 < rn)
+        ds0[m + 2] /= lreg[2]; ds1[m + 2] /= lreg[2];
 }
 
 void CollectIntersectionEdges2(

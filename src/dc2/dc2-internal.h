@@ -20,6 +20,25 @@ void Sample2(
     float* s, int n);
 
 /**
+  \brief Sample the 2D mesh grid on the given coordinates with offsets.
+
+  @param[in] x x coordinates.
+  @param[in] y y coordinates.
+  @param dx offset of x coordinates.
+  @param dy offset of y coordinates.
+  @param[out] s sampled values.
+  @param n number of mesh grid vertices.
+*/
+template <FunctionType>
+void Sample2(
+    const float* x,
+    const float* y,
+    float dx,
+    float dy,
+    float* s,
+    int n);
+
+/**
   \brief Sample the 2D mesh grid for the gradients.
 
   @param[in] x x coordinates.
