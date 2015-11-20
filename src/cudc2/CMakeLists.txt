@@ -6,3 +6,5 @@ if(WIN32)
 endif()
 
 cuda_add_library(cudc2 STATIC cudc2.cpp kcudc2.cu)
+
+add_subdirectory(tests)
