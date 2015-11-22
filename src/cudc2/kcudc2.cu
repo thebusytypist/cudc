@@ -4,12 +4,16 @@ using namespace std;
 
 #define BLOCK_SIZE 32
 
+__device__ float Square(float x) {
+    return x * x;
+}
+
 __global__ void StreamingCompactionKernel(
     int* blockOffset,
     float* data, int n,
     float* output, int cap) {
     const int i = blockIdx.x * BLOCK_SIZE + threadIdx.x;
-    int pred = data[i] < 0.5f;
+    int pred = Square(data[i]) < 0.5f;
     const int count = __syncthreads_count(pred);
 
     __shared__ int base;
