@@ -11,3 +11,4 @@ target_include_directories(cudc2 PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_subdirectory(tests)
+add_subdirectory(demos)
