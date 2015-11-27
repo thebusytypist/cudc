@@ -132,6 +132,7 @@ bool DualContour2(
         cudaMemcpyDeviceToHost);
     cudaMemcpy(p, pd, sizeof(float) * 2 * pcap,
         cudaMemcpyDeviceToHost);
+    *ecnt = 0;
 
     cudaDeviceSynchronize();
 
