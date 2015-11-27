@@ -1,6 +1,4 @@
 #include "cudc2.h"
-#include <cstdlib>
-#include <cstdio>
 using namespace std;
 
 #define TILE_WIDTH 32
@@ -15,8 +13,43 @@ __device__ float Sample2<FT_UNIT_SPHERE>(float x, float y) {
     return x * x + y * y - 1.0f;
 }
 
+template <FunctionType FT>
+__device__ void SampleGradient2(float x, float y, float* dx, float* dy) {
+    const float dh = 1e-5f;
+    const float rev2dh = 0.5f / dh;
+
+    *dx = (Sample2<FT>(x + dh, y) - Sample2<FT>(x - dh, y)) * rev2dh;
+    *dy = (Sample2<FT>(x, y + dh) - Sample2<FT>(x, y - dh)) * rev2dh;
+}
+
 __device__ bool IsIntersected(float a, float b) {
     return a < 0 && b >= 0 || a >= 0 && b < 0;
+}
+
+template <FunctionType FT>
+__device__ void SolveIntersection2(
+    float xlow, float ylow,
+    float xhigh, float yhigh,
+    float* x, float* y) {
+    const float eps = 1e-6f;
+
+    float mx = (xlow + xhigh) * 0.5f;
+    float my = (ylow + yhigh) * 0.5f;
+    float v = Sample2<FT>(mx, my);
+
+    while (fabs(v) >= eps) {
+        if (v > 0) {
+            xhigh = mx;
+            yhigh = my;
+        }
+        else {
+            xlow = mx;
+            ylow = my;
+        }
+        mx = (xlow + xhigh) * 0.5f;
+        my = (ylow + yhigh) * 0.5f;
+        v = Sample2<FT>(mx, my);
+    }
 }
 
 template <FunctionType FT>
@@ -81,10 +114,109 @@ __global__ void KDualContour2(
 
     // Generate the vertex.
     if (pred) {
-        const float cx = (x0 + x1) * 0.5f;
-        const float cy = (y0 + y1) * 0.5f;
-        p[(base + s[ti] - 1) * 2] = cx;
-        p[(base + s[ti] - 1) * 2 + 1] = cy;
+        int d = 0;
+        float cx = 0.0f, cy = 0.0f;
+        float A[8]= {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+        float b[4];
+
+        if (IsIntersected(s0, s1)) {
+            const bool n = s0 < s1;
+            const float xlow = n ? x0 : x1;
+            const float xhigh = n ? x1 : x0;
+            float x, y;
+            SolveIntersection2<FT>(xlow, y0, xhigh, y0, &x, &y);
+            float dx, dy;
+            SampleGradient2<FT>(x, y, &dx, &dy);
+
+            A[2 * d] = dx;
+            A[2 * d + 1] = dy;
+
+            cx += x;
+            cy += y;
+
+            b[d] = dx * x + dy * y;
+
+            ++d;
+        }
+
+        if (IsIntersected(s0, s2)) {
+            const bool n = s0 < s2;
+            const float ylow = n ? y0 : y1;
+            const float yhigh = n ? y1 : y0;
+            float x, y;
+            SolveIntersection2<FT>(x0, ylow, x0, yhigh, &x, &y);
+            float dx, dy;
+            SampleGradient2<FT>(x, y, &dx, &dy);
+
+            A[2 * d] = dx;
+            A[2 * d + 1] = dy;
+
+            cx += x;
+            cy += y;
+
+            b[d] = dx * x + dy * y;
+
+            ++d;
+        }
+
+        if (IsIntersected(s2, s3)) {
+            const bool n = s2 < s3;
+            const float xlow = n ? x0 : x1;
+            const float xhigh = n ? x1 : x0;
+            float x, y;
+            SolveIntersection2<FT>(xlow, y1, xhigh, y1, &x, &y);
+            float dx, dy;
+            SampleGradient2<FT>(x, y, &dx, &dy);
+
+            A[2 * d] = dx;
+            A[2 * d + 1] = dy;
+
+            cx += x;
+            cy += y;
+
+            b[d] = dx * x + dy * y;
+
+            ++d;
+        }
+
+        if (IsIntersected(s1, s3)) {
+            const bool n = s1 < s3;
+            const float ylow = n ? y0 : y1;
+            const float yhigh = n ? y1 : y0;
+            float x, y;
+            SolveIntersection2<FT>(x1, ylow, x1, yhigh, &x, &y);
+            float dx, dy;
+            SampleGradient2<FT>(x, y, &dx, &dy);
+
+            A[2 * d] = dx;
+            A[2 * d + 1] = dy;
+
+            cx += x;
+            cy += y;
+
+            b[d] = dx * x + dy * y;
+
+            ++d;
+        }
+
+        // 7 floats for QEF equation.
+        float f[7];
+
+        // Compute ATA.
+        f[0] = A[0] * A[0] + A[2] * A[2] + A[4] * A[4] + A[6] * A[6];
+        f[1] = A[0] * A[1] + A[2] * A[3] + A[4] * A[5] + A[6] * A[7];
+        f[2] = A[1] * A[1] + A[3] * A[3] + A[5] * A[5] + A[7] * A[7];
+
+        // Compute ATb.
+        f[3] = A[0] * b[0] + A[2] * b[1] + A[4] * b[2] + A[6] * b[3];
+        f[4] = A[1] * b[0] + A[3] * b[1] + A[5] * b[2] + A[7] * b[3];
+
+        // Compute mass point.
+        f[5] = cx / d;
+        f[6] = cy / d;
+
+        // Solve QEF.
+        
     }
 }
 
