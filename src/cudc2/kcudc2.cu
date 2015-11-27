@@ -18,8 +18,12 @@ __device__ void SampleGradient2(float x, float y, float* dx, float* dy) {
     const float dh = 1e-5f;
     const float rev2dh = 0.5f / dh;
 
-    *dx = (Sample2<FT>(x + dh, y) - Sample2<FT>(x - dh, y)) * rev2dh;
-    *dy = (Sample2<FT>(x, y + dh) - Sample2<FT>(x, y - dh)) * rev2dh;
+    const float a = (Sample2<FT>(x + dh, y) - Sample2<FT>(x - dh, y)) * rev2dh;
+    const float b = (Sample2<FT>(x, y + dh) - Sample2<FT>(x, y - dh)) * rev2dh;
+    const float l = sqrt(a * a + b * b);
+
+    *dx = a / l;
+    *dy = b / l;
 }
 
 __device__ bool IsIntersected(float a, float b) {
@@ -31,13 +35,13 @@ __device__ void SolveIntersection2(
     float xlow, float ylow,
     float xhigh, float yhigh,
     float* x, float* y) {
-    const float eps = 1e-6f;
+    const float EPS = 1e-6f;
 
     float mx = (xlow + xhigh) * 0.5f;
     float my = (ylow + yhigh) * 0.5f;
     float v = Sample2<FT>(mx, my);
 
-    while (fabs(v) >= eps) {
+    while (fabs(v) >= EPS) {
         if (v > 0) {
             xhigh = mx;
             yhigh = my;
@@ -50,6 +54,69 @@ __device__ void SolveIntersection2(
         my = (ylow + yhigh) * 0.5f;
         v = Sample2<FT>(mx, my);
     }
+    *x = mx;
+    *y = my;
+}
+
+__device__ void SVD2(
+    const float* M,
+    float* U,
+    float* S,
+    float* VT) {
+    const float e = 0.5f * (M[0] + M[3]);
+    const float f = 0.5f * (M[0] - M[3]);
+    const float g = 0.5f * (M[1] + M[2]);
+    const float h = 0.5f * (M[1] - M[2]);
+
+    // one half of w1 + w2
+    const float hw1pw2 = sqrt(e * e + h * h);
+    const float hw1mw2 = sqrt(f * f + g * g);
+
+    const float atangf = g == 0.0f && f == 0.0f ? 0.0f : atan2(g, f);
+    const float atanhe = h == 0.0f && e == 0.0f ? 0.0f : atan2(h, e);
+    
+    S[0] = hw1pw2 + hw1mw2;
+    S[1] = hw1pw2 - hw1mw2;
+
+    const float b = (atanhe - atangf) * 0.5f;
+    const float r = (atanhe + atangf) * 0.5f;
+
+    const float cb = cos(b);
+    const float sb = sin(b);
+    const float cr = cos(r);
+    const float sr = sin(r);
+
+    U[0] = cb;
+    U[1] = sb;
+    U[2] = -sb;
+    U[3] = cb;
+
+    VT[0] = cr;
+    VT[1] = sr;
+    VT[2] = -sr;
+    VT[3] = cr;
+}
+
+__device__ void PseudoInverse2(
+    const float* M,
+    float* pinv) {
+    const float EPS = 1e-7f;
+
+    float U[4], S[2], VT[4];
+    SVD2(M, U, S, VT);
+
+    S[0] = abs(S[0]) < EPS ? 0.0f : 1.0f / S[0];
+    S[1] = abs(S[1]) < EPS ? 0.0f : 1.0f / S[1];
+
+    const float v0 = S[0] * VT[0];
+    const float v1 = S[1] * VT[2];
+    const float v2 = S[0] * VT[1];
+    const float v3 = S[1] * VT[3];
+
+    pinv[0] = v0 * U[0] + v1 * U[1];
+    pinv[1] = v0 * U[2] + v1 * U[3];
+    pinv[2] = v2 * U[0] + v3 * U[1];
+    pinv[3] = v2 * U[2] + v3 * U[3];
 }
 
 template <FunctionType FT>
@@ -114,7 +181,7 @@ __global__ void KDualContour2(
 
     // Generate the vertex.
     if (pred) {
-        int d = 0;
+        int k = 0;
         float cx = 0.0f, cy = 0.0f;
         float A[8]= {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
         float b[4];
@@ -128,15 +195,15 @@ __global__ void KDualContour2(
             float dx, dy;
             SampleGradient2<FT>(x, y, &dx, &dy);
 
-            A[2 * d] = dx;
-            A[2 * d + 1] = dy;
+            A[2 * k] = dx;
+            A[2 * k + 1] = dy;
 
             cx += x;
             cy += y;
 
-            b[d] = dx * x + dy * y;
+            b[k] = dx * x + dy * y;
 
-            ++d;
+            ++k;
         }
 
         if (IsIntersected(s0, s2)) {
@@ -148,15 +215,15 @@ __global__ void KDualContour2(
             float dx, dy;
             SampleGradient2<FT>(x, y, &dx, &dy);
 
-            A[2 * d] = dx;
-            A[2 * d + 1] = dy;
+            A[2 * k] = dx;
+            A[2 * k + 1] = dy;
 
             cx += x;
             cy += y;
 
-            b[d] = dx * x + dy * y;
+            b[k] = dx * x + dy * y;
 
-            ++d;
+            ++k;
         }
 
         if (IsIntersected(s2, s3)) {
@@ -168,15 +235,15 @@ __global__ void KDualContour2(
             float dx, dy;
             SampleGradient2<FT>(x, y, &dx, &dy);
 
-            A[2 * d] = dx;
-            A[2 * d + 1] = dy;
+            A[2 * k] = dx;
+            A[2 * k + 1] = dy;
 
             cx += x;
             cy += y;
 
-            b[d] = dx * x + dy * y;
+            b[k] = dx * x + dy * y;
 
-            ++d;
+            ++k;
         }
 
         if (IsIntersected(s1, s3)) {
@@ -188,15 +255,15 @@ __global__ void KDualContour2(
             float dx, dy;
             SampleGradient2<FT>(x, y, &dx, &dy);
 
-            A[2 * d] = dx;
-            A[2 * d + 1] = dy;
+            A[2 * k] = dx;
+            A[2 * k + 1] = dy;
 
             cx += x;
             cy += y;
 
-            b[d] = dx * x + dy * y;
+            b[k] = dx * x + dy * y;
 
-            ++d;
+            ++k;
         }
 
         // 7 floats for QEF equation.
@@ -212,11 +279,30 @@ __global__ void KDualContour2(
         f[4] = A[1] * b[0] + A[3] * b[1] + A[5] * b[2] + A[7] * b[3];
 
         // Compute mass point.
-        f[5] = cx / d;
-        f[6] = cy / d;
+        f[5] = cx / k;
+        f[6] = cy / k;
 
         // Solve QEF.
-        
+        float pinv[4];
+        float ATA[4] = {f[0], f[1], f[1], f[2]};
+        PseudoInverse2(ATA, pinv);
+        const float ATAg[2] = {
+            ATA[0] * f[5] + ATA[1] * f[6],
+            ATA[2] * f[5] + ATA[3] * f[6]
+        };
+        const float d[2] = {
+            f[3] - ATAg[0],
+            f[4] - ATAg[1]
+        };
+        const float c[2] = {
+            pinv[0] * d[0] + pinv[1] * d[1],
+            pinv[2] * d[0] + pinv[3] * d[1]
+        };
+        const float px = c[0] + f[5];
+        const float py = c[1] + f[6];
+
+        p[2 * (base + s[ti] - 1)] = px;
+        p[2 * (base + s[ti] - 1) + 1] = py;
     }
 }
 
