@@ -121,7 +121,7 @@ bool DualContour2(
                 xs, xt, n,
                 ys + tilestep * tileY, ys + tilestep * (tileY + 1),
                 TILE_HEIGHT + 1,
-                p, pcap, pcnt);
+                pd, pcap, pcntd);
 
             cudaDeviceSynchronize();
         }
