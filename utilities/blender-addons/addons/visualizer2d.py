@@ -32,7 +32,7 @@ class Visualizer2D(bpy.types.Operator):
 
                 edges = []
                 for i in range(ecnt):
-                    a, b = map(int, lines[1 + ecnt + i].split())
+                    a, b = map(int, lines[1 + vcnt + i].split())
                     edges.append((a, b))
 
                 mesh = bpy.data.meshes.new("Mesh")
