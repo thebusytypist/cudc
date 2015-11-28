@@ -409,7 +409,8 @@ bool DualContour2(
     if (r != 0)
         ++tiles;
 
-    const float tilestep = (yt - ys) / (n - 1) * TILE_HEIGHT;
+    const float ystep = (yt - ys) / (n - 1);
+    const float tilestep = ystep * TILE_HEIGHT;
 
     dim3 blockDim(TILE_WIDTH, TILE_HEIGHT);
     dim3 gridDim(blocks, 1);
@@ -442,7 +443,8 @@ bool DualContour2(
 
             KDualContour2<FT_UNIT_SPHERE><<<gridDim, blockDim>>>(
                 xs, xt, n,
-                ys + tilestep * tileY, ys + tilestep * (tileY + 1),
+                ys + tilestep * tileY,
+                ys + tilestep * tileY + ystep * (yn - 1),
                 yn,
                 pd, pcap, pcntd,
                 ibufferd, tileY);
