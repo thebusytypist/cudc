@@ -3,6 +3,7 @@
 
 enum FunctionType {
     FT_UNIT_SPHERE = 0,
+    FT_HEART,
     cFunctionTypeCount
 };
 

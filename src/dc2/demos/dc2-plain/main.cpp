@@ -1,6 +1,7 @@
 #include <dc2.h>
 #include <cassert>
 #include <cstdio>
+#include <cstring>
 using namespace std;
 
 int main(int argc, char* argv[]) {
@@ -9,17 +10,26 @@ int main(int argc, char* argv[]) {
 
     float start, end;
     int ticks;
-    assert(argc == 4);
-    sscanf(argv[1], "%f", &start);
-    sscanf(argv[2], "%f", &end);
-    sscanf(argv[3], "%d", &ticks);
+    FunctionType ft;
+    assert(argc == 5);
+
+    if (strncmp(argv[1], "UNIT_SPHERE", 11) == 0)
+        ft = FT_UNIT_SPHERE;
+    else if (strncmp(argv[1], "HEART", 5) == 0)
+        ft = FT_HEART;
+    else
+        assert(false); 
+
+    sscanf(argv[2], "%f", &start);
+    sscanf(argv[3], "%f", &end);
+    sscanf(argv[4], "%d", &ticks);
 
     float p[pcap * 2];
     int edges[ecap * 2];
 
     int pcnt, ecnt;
 
-    bool r = DualContour2(FT_UNIT_SPHERE,
+    bool r = DualContour2(ft,
         start, end,
         start, end,
         ticks,

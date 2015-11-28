@@ -36,6 +36,41 @@ void Sample2<FT_UNIT_SPHERE>(
     }
 }
 
+template <>
+void Sample2<FT_HEART>(
+    float xs, float xt,
+    float ys, float yt,
+    float* s, int n) {
+    const float xstep = (xt - xs) / (n - 1);
+    const float ystep = (yt - ys) / (n - 1);
+    for (int i = 0; i < n; ++i) {
+        const float x = xs + i * xstep;
+        const float y = ys + i * ystep;
+        const float x2 = x * x;
+        const float y2 = y * y;
+        const float t = x2 + y2 - 1.0f;
+        s[i] = t * t * t - x2 * y2 * y;
+    }
+}
+
+template <>
+void Sample2<FT_HEART>(
+    const float* x,
+    const float* y,
+    float dx,
+    float dy,
+    float* s,
+    int n) {
+    for (int i = 0; i < n; ++i) {
+        const float xi = x[i] + dx;
+        const float yi = y[i] + dy;
+        const float x2 = xi * xi;
+        const float y2 = yi * yi;
+        const float t = x2 + y2 - 1.0f;
+        s[i] = t * t * t - x2 * y2 * yi;
+    }
+}
+
 template <FunctionType FT>
 void SampleGradient2(
     const float* x, const float* y,
@@ -739,6 +774,11 @@ bool DualContour2(
         case FT_UNIT_SPHERE:
             return GenericDualContour2<FT_UNIT_SPHERE>(
                 xs, xt, ys, yt, n, p, pcap, pcnt, edges, ecap, ecnt);
+
+        case FT_HEART:
+            return GenericDualContour2<FT_HEART>(
+                xs, xt, ys, yt, n, p, pcap, pcnt, edges, ecap, ecnt);
+            
         default:
             assert(false);
             return false;
