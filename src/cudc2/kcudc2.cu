@@ -13,6 +13,14 @@ __device__ float Sample2<FT_UNIT_SPHERE>(float x, float y) {
     return x * x + y * y - 1.0f;
 }
 
+template <>
+__device__ float Sample2<FT_HEART>(float x, float y) {
+    const float x2 = x * x;
+    const float y2 = y * y;
+    const float t = x2 + y2 - 1.0f;
+    return t * t * t - x2 * y2 * y;
+}
+
 template <FunctionType FT>
 __device__ void SampleGradient2(float x, float y, float* dx, float* dy) {
     const float dh = 1e-5f;
@@ -394,6 +402,31 @@ __global__ void KBuildTopology(
     }
 }
 
+#define PROCESS(FT)\
+    for (int tileY = 0; tileY < tiles; ++tileY) {\
+        int yn = TILE_HEIGHT + 1;\
+        if (tileY == tiles - 1)\
+            yn = r + 1;\
+        \
+        KDualContour2<FT><<<gridDim, blockDim>>>(\
+            xs, xt, n,\
+            ys + tilestep * tileY,\
+            ys + tilestep * tileY + ystep * (yn - 1),\
+            yn,\
+            pd, pcap, pcntd,\
+            ibufferd, tileY);\
+        \
+        cudaDeviceSynchronize();\
+        \
+        KBuildTopology<<<gridDim, blockDim>>>(\
+            ibufferd,\
+            tileY,\
+            n, yn,\
+            edgesd, ecap, ecntd);\
+        \
+        cudaDeviceSynchronize();\
+    }
+
 bool DualContour2(
     FunctionType ft,
     float xs, float xt,
@@ -436,6 +469,7 @@ bool DualContour2(
 
     // Launch computation grid tile by tile.
     if (ft == FT_UNIT_SPHERE) {
+#if 0
         for (int tileY = 0; tileY < tiles; ++tileY) {
             int yn = TILE_HEIGHT + 1;
             if (tileY == tiles - 1)
@@ -459,6 +493,11 @@ bool DualContour2(
 
             cudaDeviceSynchronize();
         }
+#endif
+        PROCESS(FT_UNIT_SPHERE);
+    }
+    else if (ft == FT_HEART) {
+        PROCESS(FT_HEART);
     }
 
     // Fetch device data.
