@@ -405,7 +405,8 @@ bool DualContour2(
         ++blocks;
 
     int tiles = (n - 1) / TILE_HEIGHT;
-    if ((n - 1) % TILE_HEIGHT != 0)
+    int r = (n - 1) % TILE_HEIGHT;
+    if (r != 0)
         ++tiles;
 
     const float tilestep = (yt - ys) / (n - 1) * TILE_HEIGHT;
@@ -435,10 +436,14 @@ bool DualContour2(
     // Launch computation grid tile by tile.
     if (ft == FT_UNIT_SPHERE) {
         for (int tileY = 0; tileY < tiles; ++tileY) {
+            int yn = TILE_HEIGHT + 1;
+            if (tileY == tiles - 1)
+                yn = r + 1;
+
             KDualContour2<FT_UNIT_SPHERE><<<gridDim, blockDim>>>(
                 xs, xt, n,
                 ys + tilestep * tileY, ys + tilestep * (tileY + 1),
-                TILE_HEIGHT + 1,
+                yn,
                 pd, pcap, pcntd,
                 ibufferd, tileY);
 
@@ -447,7 +452,7 @@ bool DualContour2(
             KBuildTopology<<<gridDim, blockDim>>>(
                 ibufferd,
                 tileY,
-                n, TILE_HEIGHT + 1,
+                n, yn,
                 edgesd, ecap, ecntd);
 
             cudaDeviceSynchronize();
