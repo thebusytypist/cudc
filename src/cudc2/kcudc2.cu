@@ -123,7 +123,8 @@ template <FunctionType FT>
 __global__ void KDualContour2(
     float xs, float xt, int xn,
     float ys, float yt, int yn,
-    float* p, int pcap, int* pcnt) {
+    float* p, int pcap, int* pcnt,
+    int* ibuffer, int tileY) {
     const float xstep = (xt - xs) / (xn - 1);
     const float ystep = (yt - ys) / (yn - 1);
 
@@ -178,6 +179,16 @@ __global__ void KDualContour2(
 
         __syncthreads();
     }
+
+    // Compute the index of generated vertex.
+    const int pi = base + s[ti] - 1;
+
+    // Initialize the index buffer.
+    const int which = tileY % 2;
+    const int ibufferstride = (xn - 1) * TILE_HEIGHT;
+    const int bi = which * ibufferstride + ty * (xn - 1) + tx;
+    if (active)
+        ibuffer[bi] = -1;
 
     // Generate the vertex.
     if (pred) {
@@ -301,8 +312,85 @@ __global__ void KDualContour2(
         const float px = c[0] + f[5];
         const float py = c[1] + f[6];
 
-        p[2 * (base + s[ti] - 1)] = px;
-        p[2 * (base + s[ti] - 1) + 1] = py;
+        p[2 * pi] = px;
+        p[2 * pi + 1] = py;
+
+        ibuffer[bi] = pi;
+    }
+}
+
+__global__ void KBuildTopology(
+    const int* ibuffer, int tileY,
+    int xn, int yn,
+    int* edges, int ecap, int* ecnt) {
+    const int which = tileY % 2;
+    const int ibufferstride = (xn - 1) * TILE_HEIGHT;
+    const int* ib = ibuffer + which * ibufferstride;
+    const int* prev = ibuffer + (1 - which) * ibufferstride;
+
+    const int tx = blockIdx.x * TILE_WIDTH + threadIdx.x;
+    const int ty = threadIdx.y;
+    const int ti = threadIdx.y * TILE_WIDTH + threadIdx.x;
+    const bool active = tx < (xn - 1) && ty < (yn - 1);
+
+    const int self = active ? ib[ty * (xn - 1) + tx] : -1;
+    const int left = tx == 0 ? -1 : ib[ty * (xn - 1) + tx - 1];
+    const int down = (active && !(tileY == 0 && ty == 0)) ?
+        (ty == 0 ? prev[(TILE_HEIGHT - 1) * (xn - 1) + tx] :
+        ib[(ty - 1) * (xn - 1) + tx]) : -1;
+
+    int count = 0;
+    if (self != -1) {
+        if (left != -1)
+            ++count;
+        if (down != -1)
+            ++count;
+    }
+
+    const int total1 = __syncthreads_count(count == 1);
+    const int total2 = __syncthreads_count(count == 2);
+    const int total = total1 + total2 * 2;
+
+    __shared__ int base;
+
+    if (threadIdx.x == 0 && threadIdx.y == 0) {
+        base = atomicAdd(ecnt, total);
+    }
+
+    __shared__ int s[BLOCK_SIZE];
+    s[ti] = count;
+
+    __syncthreads();
+
+    // Reduction step.
+    for (int stride = 1; stride <= BLOCK_SIZE / 2; stride *= 2) {
+        int index = (ti + 1) * stride * 2 - 1;
+        if (index < BLOCK_SIZE)
+            s[index] += s[index - stride];
+
+        __syncthreads();
+    }
+
+    // Post scan step.
+    for (int stride = BLOCK_SIZE / 4; stride > 0; stride /= 2) {
+        int index = (ti + 1) * stride * 2 - 1;
+        if (index + stride < BLOCK_SIZE)
+            s[index + stride] += s[index];
+
+        __syncthreads();
+    }
+
+    const int ei = base + s[ti] - count;
+
+    if (count != 0 && active) {
+        const int node = left != -1 ? left : down;
+        edges[2 * ei] = self;
+        edges[2 * ei + 1] = node;
+        --count;
+    }
+    if (count != 0 && active) {
+        edges[2 * (ei + 1)] = self;
+        edges[2 * (ei + 1) + 1] = down;
     }
 }
 
@@ -331,6 +419,18 @@ bool DualContour2(
     int* pcntd = nullptr;
     cudaMalloc(&pcntd, sizeof(int));
     cudaMemset(pcntd, 0, sizeof(int));
+    
+    int* edgesd = nullptr;
+    cudaMalloc(&edgesd, sizeof(int) * 2 * ecap);
+    int* ecntd = nullptr;
+    cudaMalloc(&ecntd, sizeof(int));
+    cudaMemset(ecntd, 0, sizeof(int));
+
+    // Allocate double index buffer.
+    const int ibuffersize = sizeof(int) * (n - 1) * TILE_HEIGHT * 2;
+    int* ibufferd = nullptr;
+    cudaMalloc(&ibufferd, ibuffersize);
+    cudaMemset(ibufferd, -1, ibuffersize);
 
     // Launch computation grid tile by tile.
     if (ft == FT_UNIT_SPHERE) {
@@ -339,7 +439,16 @@ bool DualContour2(
                 xs, xt, n,
                 ys + tilestep * tileY, ys + tilestep * (tileY + 1),
                 TILE_HEIGHT + 1,
-                pd, pcap, pcntd);
+                pd, pcap, pcntd,
+                ibufferd, tileY);
+
+            cudaDeviceSynchronize();
+
+            KBuildTopology<<<gridDim, blockDim>>>(
+                ibufferd,
+                tileY,
+                n, TILE_HEIGHT + 1,
+                edgesd, ecap, ecntd);
 
             cudaDeviceSynchronize();
         }
@@ -350,11 +459,18 @@ bool DualContour2(
         cudaMemcpyDeviceToHost);
     cudaMemcpy(p, pd, sizeof(float) * 2 * pcap,
         cudaMemcpyDeviceToHost);
-    *ecnt = 0;
+    
+    cudaMemcpy(ecnt, ecntd, sizeof(int),
+        cudaMemcpyDeviceToHost);
+    cudaMemcpy(edges, edgesd, sizeof(int) * 2 * ecap,
+        cudaMemcpyDeviceToHost);
 
     cudaDeviceSynchronize();
 
     // Release resources.
+    cudaFree(ibufferd);
+    cudaFree(ecntd);
+    cudaFree(edgesd);
     cudaFree(pcntd);
     cudaFree(pd);
 
