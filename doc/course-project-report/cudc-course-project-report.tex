@@ -14,6 +14,7 @@
 \usepackage{dsfont}
 
 \usepackage{tikz}
+\usetikzlibrary{patterns}
 
 \usepackage{graphicx}
 
@@ -179,38 +180,38 @@ The result of this step is illustrated in figure \ref{fig:intersections-2d-dc}.
 \draw (0, 0) circle (1.7);
 
 % Draw intersections.
-\filldraw[fill=red] (-1, -1.3748) circle(0.08);
-\filldraw[fill=red] (0, -1.7) circle(0.08);
-\filldraw[fill=red] (1, -1.3748) circle(0.08);
+\filldraw (-1, -1.3748) circle(0.08);
+\filldraw (0, -1.7) circle(0.08);
+\filldraw (1, -1.3748) circle(0.08);
 
-\filldraw[fill=red] (-1.3748, -1) circle(0.08);
-\filldraw[fill=red] (1.3748, -1) circle(0.08);
+\filldraw (-1.3748, -1) circle(0.08);
+\filldraw (1.3748, -1) circle(0.08);
 
-\filldraw[fill=red] (-1.7, 0) circle(0.08);
-\filldraw[fill=red] (1.7, 0) circle(0.08);
+\filldraw (-1.7, 0) circle(0.08);
+\filldraw (1.7, 0) circle(0.08);
 
-\filldraw[fill=red] (-1.3748, 1) circle(0.08);
-\filldraw[fill=red] (-1, 1.3748) circle(0.08);
-\filldraw[fill=red] (0, 1.7) circle(0.08);
-\filldraw[fill=red] (1, 1.3748) circle(0.08);
-\filldraw[fill=red] (1.3748, 1) circle(0.08);
+\filldraw (-1.3748, 1) circle(0.08);
+\filldraw (-1, 1.3748) circle(0.08);
+\filldraw (0, 1.7) circle(0.08);
+\filldraw (1, 1.3748) circle(0.08);
+\filldraw (1.3748, 1) circle(0.08);
 
 % Draw gradients.
-\draw[->, >=stealth, thick, red] (-1, -1.3748) -- (-1.5882, -2.1835);
-\draw[->, >=stealth, thick, red] (0, -1.7) -- (0, -2.7);
-\draw[->, >=stealth, thick, red] (1, -1.3748) -- (1.5882, -2.1835);
+\draw[->, >=stealth, thick] (-1, -1.3748) -- (-1.5882, -2.1835);
+\draw[->, >=stealth, thick] (0, -1.7) -- (0, -2.7);
+\draw[->, >=stealth, thick] (1, -1.3748) -- (1.5882, -2.1835);
 
-\draw[->, >=stealth, thick, red] (-1.3748, -1) -- (-2.1835, -1.5882);
-\draw[->, >=stealth, thick, red] (1.3748, -1) -- (2.1835, -1.5882);
+\draw[->, >=stealth, thick] (-1.3748, -1) -- (-2.1835, -1.5882);
+\draw[->, >=stealth, thick] (1.3748, -1) -- (2.1835, -1.5882);
 
-\draw[->, >=stealth, thick, red] (-1.7, 0) -- (-2.7, 0);
-\draw[->, >=stealth, thick, red] (1.7, 0) -- (2.7, 0);
+\draw[->, >=stealth, thick] (-1.7, 0) -- (-2.7, 0);
+\draw[->, >=stealth, thick] (1.7, 0) -- (2.7, 0);
 
-\draw[->, >=stealth, thick, red] (-1.3748, 1) -- (-2.1835, 1.5882);
-\draw[->, >=stealth, thick, red] (-1, 1.3748) -- (-1.5882, 2.1835);
-\draw[->, >=stealth, thick, red] (0, 1.7) -- (0, 2.7);
-\draw[->, >=stealth, thick, red] (1, 1.3748) -- (1.5882, 2.1835);
-\draw[->, >=stealth, thick, red] (1.3748, 1) -- (2.1835, 1.5882);
+\draw[->, >=stealth, thick] (-1.3748, 1) -- (-2.1835, 1.5882);
+\draw[->, >=stealth, thick] (-1, 1.3748) -- (-1.5882, 2.1835);
+\draw[->, >=stealth, thick] (0, 1.7) -- (0, 2.7);
+\draw[->, >=stealth, thick] (1, 1.3748) -- (1.5882, 2.1835);
+\draw[->, >=stealth, thick] (1.3748, 1) -- (2.1835, 1.5882);
 
 \end{tikzpicture}
 \caption{Intersections and their Hermitian data}
@@ -243,7 +244,7 @@ We can build the topology by connecting vertices from
 adjacent grid cells.
 
 Figure \ref{fig:2d-dc-example} illustrates dual contouring results
-for a heart, a squircle($x^4 + y^4 - 1$),
+of a heart, a squircle($x^4 + y^4 - 1$),
 and the subtraction of them.
 
 \begin{figure}[h]
@@ -253,9 +254,62 @@ and the subtraction of them.
 \label{fig:2d-dc-example}
 \end{figure}
 
-\subsection{The CPU Version}
+\subsection{The CPU Implementation in C\texttt{++}}
 
-\subsection{The CUDA Version}
+There are several considerations
+in our implementation of dual contouring on CPU.
+
+First, a trivial implementation which stores the whole mesh grid
+suggests a spatial complexity of $\mathcal{O}(n^2)$(or $\mathcal{O}(n^3)$
+in 3D).
+We do not want the memory consumption be a bottle neck,
+so we do the sampling in a row by row manner.
+Then only one row has to be maintained during sampling,
+and one extra row has to be maintained for the topology construction
+since we have to connect edges to the vertices in the previous row.
+Thus the spatial complexity can be reduced to
+$\mathcal{O}(n)$ in 2D(or $\mathcal{O}(n^2)$ in 3D).
+
+Second, we think the sampling would occupy the majority time
+of the whole computation(However this turns out to be \emph{false}.
+See our later performance report and analysis).
+So we want to reduce the computation as much as we can.
+Observing that each sampling vertex has $4$ adjacent grid cells,
+we can do the sampling only once, cache it in memory,
+and reuse it for all adjacent grid cells.
+
+The computing scheme is illustrated in figure \ref{fig:computing-scheme-cpp}.
+Each dots indicate a sampling point.
+And the dashed rectangle indicates the row we are working on.
+The hatched area indicates a $4$ elements wide SIMD pack if SSE is used.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\draw[step=1, gray, very thin] (-3.5, 0) grid (3.5, 3.5);
+
+% Draw samples.
+\foreach \x in {-3, ..., 3}
+{
+    \foreach \y in {0, ..., 3}
+        \filldraw (\x, \y) circle (0.08);
+}
+
+% Draw current row.
+\draw[dashed] (-3.2, 1.2) rectangle (3.2, -0.2);
+
+% Draw SIMD pack.
+\draw[pattern=north west lines, pattern color=gray]
+(-3.1, 1.1) rectangle (1.1, -0.1);
+
+\end{tikzpicture}
+\caption{The computing scheme in C\texttt{++}}
+\label{fig:computing-scheme-cpp}
+\end{figure}
+
+\subsection{The CUDA Implementation}
+
+
 
 \section{Analysis}
 
