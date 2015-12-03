@@ -469,7 +469,14 @@ then move on to the next row and repeat the same procedure.
 Too many kernel invocation from host may be a problem.
 But it requires further inspection.
 
+We also notice from the profiler that the theoretical occupation is 50\%
+for the kernel \texttt{KDualContour2}.
+One possible optimization is to reduce the usage of shared memory
+by using some Computability 3+ features such as \texttt{\_\_shfl\_down}
+to increase the threads occupation.
+
 \section{Summary}
+
 
 \newpage
 \addcontentsline{toc}{section}{References}
