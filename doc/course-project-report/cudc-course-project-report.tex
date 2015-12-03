@@ -378,9 +378,96 @@ Hence no global array is required.
 \label{fig:computing-scheme-cuda}
 \end{figure}
 
-\section{Analysis}
+\section{Performance Test and Analysis}
 
-\section{Conclusion}
+All performance tests are taken on Windows 10 x86\_64,
+with Visual C\texttt{++} 2013 and CUDA toolkit 7.5.
+The CPU is i5 6600k @ 4.17GHz with 16 GB DDR4 RAM; the GPU is GTX 970.
+
+The test case is to dual contour a heart equation
+on the domain $[-500, 500]\times[-500, 500]$
+with grid resolution of $20000$.
+
+\subsection{The CPU Implementation in C\texttt{++}}
+
+We use Intel's Amplifier XE to analyze the detailed time consumption
+of our CPU implementation.
+The total running time is 3.136 seconds.
+The top-down tree of the running time is shown in table
+\ref{tab:dc2-cpu-performance}.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{| l | l | l |}
+\hline
+Function Stack & CPU Time: Total & CPU Time: Self\\  \hline
+\texttt{CollectIntersectionEdge2} & 40.4\% & 1.232s \\
+\texttt{ConstructQEF2} & 40.1\% & 1.222s \\
+\texttt{GenericDualContour2} & 12.0\% & 0.367s \\
+\texttt{Sample2} & 6.7\% & 0.203s \\
+\hline
+\end{tabular}
+\caption{Top-down tree of the running time of CPU implementation}
+\label{tab:dc2-cpu-performance}
+\end{table}
+
+The bottle neck is in the gathering of intersected edges and
+QEF construction, which is also a gathering operation.
+
+By inspecting the hot spot in the source code,
+we can find that about half of the time is in the reading of the memory.
+Therefore our implementation is memory bound.
+
+Because the sampling only occupies a minority of runtime,
+we can trade some computation for better memory performance.
+
+\subsection{The CUDA Implementation}
+
+The total running time is 0.556 seconds.
+It is about 5.64x speed-up comparing with the CPU implementation.
+
+We use nVidia's Visual Profiler to give detailed information of running time.
+It is shown in table \ref{tab:cudc2-cuda-performance}.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{| l | l | l |}
+\hline
+& \texttt{KDualContour2} & \texttt{KBuildTopology}\\  \hline
+Global Memory Load Efficiency & 0\% & 82.1\%\\
+Global Memory Store Efficiency & 82.1\% & 0\%\\
+Shared Memory Efficiency & 23.4\% & 23.4\%\\
+Branch Efficiency & 100\% & 100\%\\
+\hline
+\end{tabular}
+\caption{Details of the running time of CUDA implementation}
+\label{tab:cudc2-cuda-performance}
+\end{table}
+
+Since most of the cells do not contribute to the zero level set
+of the function, so we can see the divergence does not cause problem.
+
+The kernel \texttt{KDualContour2} does not read from the global memory,
+and \texttt{KBuildTopology} almost does not store to the global memory,
+therefore we get a 0\% in the statistics.
+
+We also see a 82.1\% global memory load efficiency
+for \texttt{KDualContour2} and 82.1\% global memory store efficiency for
+\texttt{KBuildTopology}.
+This memory access is to store and load the QEF indices.
+Most threads either write to a consecutive memory area or never write anything.
+That is, it is coalesced.
+
+In the profiler we can see many kernel invocations.
+This is because we launch the kernels \texttt{KDualContour2} and
+\texttt{KBuildTopology}
+in an interleaved manner.
+That is, we solve QEFs for one row and construct topology for that row,
+then move on to the next row and repeat the same procedure.
+Too many kernel invocation from host may be a problem.
+But it requires further inspection.
+
+\section{Summary}
 
 \newpage
 \addcontentsline{toc}{section}{References}
