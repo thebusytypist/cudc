@@ -219,7 +219,7 @@ The result of this step is illustrated in figure \ref{fig:intersections-2d-dc}.
 \end{figure}
 
 After the Hermitian data is ready,
-the QEFs can be built.
+the QEFs can be built as following:
 
 \begin{eqnarray*}
 E[x] & = & \sum_i {(n_i \cdot (x - p_i))^2}\\
@@ -309,7 +309,74 @@ The hatched area indicates a $4$ elements wide SIMD pack if SSE is used.
 
 \subsection{The CUDA Implementation}
 
+Being similar to the CPU implementation,
+we also use the row by row approach in the CUDA version
+to reduce the spatial complexity.
+And to utilize the high throughput of GPU we expand each row into
+a tile.
 
+In figure \ref{fig:computing-scheme-cuda} the computing scheme is illustrated.
+The dashed bounding rectangle indicates a CUDA grid;
+one CUDA block is drawn as solid rectangle;
+and one CUDA thread is drawn as hatched rectangle.
+
+Should we cache the sampled values like what we did in CPU implementation?
+A preliminary performance test in CPU implementation
+reports that the sampling occupies only $5\%$ of the whole algorithm,
+while the memory access occupies almost rest of the running time.
+Therefore we decide not to cache sampled values.
+That is, we sacrifice some duplicated computations for less memory access.
+
+Concretely,
+every grid cell(which is mapped to a CUDA thread)
+computes $4$ samples at its corner.
+Then every grid vertex gets sampled for $4$ times by its adjacent cells.
+In this way we can avoid the writing to the memory.
+
+Besides, since not every grid cell have intersections and contribute
+one QEF, we have to do a streaming compaction.
+In a traditional implementation of streaming compaction,
+prefix sum is implemented and an extra global array will be filled to
+do prefix sum across blocks.
+In our implementation, we use \texttt{\_\_syncthreads\_count}
+to count the sum in one block,
+and use atomic operations to compute the offset of one block.
+Hence no global array is required.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\draw[step=1, gray, very thin] (-4.5, 0) grid (4.5, 4.5);
+
+% Draw samples.
+\foreach \x in {-4, ..., 4}
+{
+    \foreach \y in {0, ..., 4}
+        \filldraw[gray] (\x, \y) circle (0.08);
+}
+
+% Draw computing grids.
+\draw[dashed] (-4.2, 2.2) rectangle (4.2, -0.2);
+\begin{scope}
+    \clip (-4.5, 0) rectangle (4.5, 4.5);
+    \draw[dashed] (-4.2, 5.2) rectangle (4.2, 2.8);
+\end{scope}
+
+% Draw computing blocks.
+\draw (-4.1, 2.1) rectangle (-1.9, -0.1);
+
+% Draw one thread.
+\filldraw (-3, 1) circle (0.08);
+\filldraw (-2, 1) circle (0.08);
+\filldraw (-3, 2) circle (0.08);
+\filldraw (-2, 2) circle (0.08);
+\draw[pattern=north west lines, pattern color=gray]
+(-3, 2) rectangle (-2, 1);
+
+\end{tikzpicture}
+\caption{The computing scheme in CUDA}
+\label{fig:computing-scheme-cuda}
+\end{figure}
 
 \section{Analysis}
 
