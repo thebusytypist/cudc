@@ -46,13 +46,13 @@ A visualizer is also provided as a Blender add-on
 to preview the results and check the correctness.
 
 Finally we will provide some performance testing and detailed analysis
-in the last part of this report.
+in the latter part of this report.
 
 \section{Design and Implementation}
 
 \subsection{General Overview}
 
-In this section we will provide a general overview of dual contouring.
+In this section we will provide a general overview of dual contouring algorithm.
 The architecture-independent perspectives
 of this algorithm will be discussed.
 
@@ -66,7 +66,7 @@ we will sample the function on a uniform grid.
 Here is an example in figure \ref{fig:sampling-2d-dc},
 where we sample the function $x^2 + y^2 - 1.7$.
 The $0$ level set of this function is plotted as a circle of radius $1.7$.
-The samples which have a negative value are drawn with filled dots.
+The samples which have a negative value are drawn with solid dots.
 
 \begin{figure}[h]
 \centering
@@ -320,7 +320,7 @@ The dashed bounding rectangle indicates a CUDA grid;
 one CUDA block is drawn as solid rectangle;
 and one CUDA thread is drawn as hatched rectangle.
 
-Should we cache the sampled values like what we did in CPU implementation?
+Should we cache the sampled values like what we do in CPU implementation?
 A preliminary performance test in CPU implementation
 reports that the sampling occupies only $5\%$ of the whole algorithm,
 while the memory access occupies almost rest of the running time.
@@ -331,7 +331,8 @@ Concretely,
 every grid cell(which is mapped to a CUDA thread)
 computes $4$ samples at its corner.
 Then every grid vertex gets sampled for $4$ times by its adjacent cells.
-In this way we can avoid the writing to the memory.
+In this way although duplicated computations are performed,
+we can avoid the writing to the memory.
 
 Besides, since not every grid cell have intersections and contribute
 one QEF, we have to do a streaming compaction.
@@ -340,8 +341,8 @@ prefix sum is implemented and an extra global array will be filled to
 do prefix sum across blocks.
 In our implementation, we use \texttt{\_\_syncthreads\_count}
 to count the sum in one block,
-and use atomic operations to compute the offset of one block.
-Hence no global array is required.
+and use atomic operations to compute the offset of each block.
+Hence no extra global array is required.
 
 \begin{figure}[h]
 \centering
@@ -415,7 +416,7 @@ The bottle neck is in the gathering of intersected edges and
 QEF construction, which is also a gathering operation.
 
 By inspecting the hot spot in the source code,
-we can find that about half of the time is in the reading of the memory.
+we can find that about half of the time is in the memory access.
 Therefore our implementation is memory bound.
 
 Because the sampling only occupies a minority of runtime,
@@ -428,7 +429,8 @@ It is about 5.64x speed-up comparing with the CPU implementation.
 
 We supply \texttt{-G} option in our kernel compilation to generate
 profiling information
-and use nVidia's Visual Profiler to give detailed information of running time.
+and use NVIDIA's Visual Profiler
+to produce detailed information of running time.
 It is shown in table \ref{tab:cudc2-cuda-performance}.
 
 \begin{table}[h]
@@ -447,7 +449,7 @@ Branch Efficiency & 100\% & 100\%\\
 \end{table}
 
 Since most of the cells do not contribute to the zero level set
-of the function, so we can see the divergence does not cause problem.
+of the function, so we can see the divergence does not cause serious problems.
 
 The kernel \texttt{KDualContour2} does not read from the global memory,
 and \texttt{KBuildTopology} almost does not store to the global memory,
@@ -480,7 +482,7 @@ to increase the threads occupation.
 In this project a CUDA based 2D dual contouring on uniform grid
 is implemented and analyzed.
 For some memory bound applications,
-we still have the chance to optimize it using CUDA.
+we learn that there is still chance to optimize it using CUDA.
 By utilizing the high throughput of GPU,
 we can trade some duplicated computation for a better memory performance.
 
