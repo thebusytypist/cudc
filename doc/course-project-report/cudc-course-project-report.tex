@@ -477,6 +477,18 @@ to increase the threads occupation.
 
 \section{Summary}
 
+In this project a CUDA based 2D dual contouring on uniform grid
+is implemented and analyzed.
+For some memory bound applications,
+we still have the chance to optimize it using CUDA.
+By utilizing the high throughput of GPU,
+we can trade some duplicated computation for a better memory performance.
+
+There are also many issues left for future work.
+The SVD and the pseudo-inverse computation is not stable.
+This will cause topology incorrectness in some cases.
+Besides, for practical use in video games or other interactive applications,
+an adaptive dual contouring is required.
 
 \newpage
 \addcontentsline{toc}{section}{References}
