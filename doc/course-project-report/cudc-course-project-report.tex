@@ -109,7 +109,7 @@ The samples which have a negative value are drawn with filled dots.
 \label{fig:sampling-2d-dc}
 \end{figure}
 
-Every edge which exhibits different signs at its ends
+Every edge which exhibits opposite signs at its ends
 has a potential intersection with the $0$ level set of the function.
 We highlight these edges in figure \ref{fig:intersected-edges-2d-dc}.
 
@@ -170,6 +170,77 @@ The intersections of these edges can be found by a binary search.
 And the gradients at the intersections
 (the Hermitian data in the glossary of \cite{ju2002dual})
 can be computed by finite differencing.
+The result of this step is illustrated in figure \ref{fig:intersections-2d-dc}.
+
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}
+\draw[step=1, gray, very thin] (-2.5, -2.5) grid (2.5, 2.5);
+\draw (0, 0) circle (1.7);
+
+% Draw intersections.
+\filldraw[fill=red] (-1, -1.3748) circle(0.08);
+\filldraw[fill=red] (0, -1.7) circle(0.08);
+\filldraw[fill=red] (1, -1.3748) circle(0.08);
+
+\filldraw[fill=red] (-1.3748, -1) circle(0.08);
+\filldraw[fill=red] (1.3748, -1) circle(0.08);
+
+\filldraw[fill=red] (-1.7, 0) circle(0.08);
+\filldraw[fill=red] (1.7, 0) circle(0.08);
+
+\filldraw[fill=red] (-1.3748, 1) circle(0.08);
+\filldraw[fill=red] (-1, 1.3748) circle(0.08);
+\filldraw[fill=red] (0, 1.7) circle(0.08);
+\filldraw[fill=red] (1, 1.3748) circle(0.08);
+\filldraw[fill=red] (1.3748, 1) circle(0.08);
+
+% Draw gradients.
+\draw[->, >=stealth, thick, red] (-1, -1.3748) -- (-1.5882, -2.1835);
+\draw[->, >=stealth, thick, red] (0, -1.7) -- (0, -2.7);
+\draw[->, >=stealth, thick, red] (1, -1.3748) -- (1.5882, -2.1835);
+
+\draw[->, >=stealth, thick, red] (-1.3748, -1) -- (-2.1835, -1.5882);
+\draw[->, >=stealth, thick, red] (1.3748, -1) -- (2.1835, -1.5882);
+
+\draw[->, >=stealth, thick, red] (-1.7, 0) -- (-2.7, 0);
+\draw[->, >=stealth, thick, red] (1.7, 0) -- (2.7, 0);
+
+\draw[->, >=stealth, thick, red] (-1.3748, 1) -- (-2.1835, 1.5882);
+\draw[->, >=stealth, thick, red] (-1, 1.3748) -- (-1.5882, 2.1835);
+\draw[->, >=stealth, thick, red] (0, 1.7) -- (0, 2.7);
+\draw[->, >=stealth, thick, red] (1, 1.3748) -- (1.5882, 2.1835);
+\draw[->, >=stealth, thick, red] (1.3748, 1) -- (2.1835, 1.5882);
+
+\end{tikzpicture}
+\caption{Intersections and their Hermitian data}
+\label{fig:intersections-2d-dc}
+\end{figure}
+
+After the Hermitian data is ready,
+the QEFs can be built.
+
+\begin{eqnarray*}
+E[x] & = & \sum_i {(n_i \cdot (x - p_i))^2}\\
+& = & x^T A^T Ax - 2x^T A^T b + b^T b
+\end{eqnarray*}
+
+In 2D dual contouring,
+each QEF can be represented by $7$ floating point numbers.
+Since $A^T A$ is a $2\times 2$ symmetrical matrix, it requires $3$ floats.
+The $A^T b$ is a $2\times 1$ column vector, so it requires $2$ floats.
+We also store $2$ floats for the mass point,
+which is a $2\times 1$ column vector and will be used in mass point projection
+(see \cite{schaefer2002dual} for details about mass point projection).
+
+We solve the QEF by computing the pseudo-inverse
+as suggested in \cite{ju2002dual}.
+And compute a $2\times2$ SVD for the pseudo-inverse.
+This method is described in \cite{blinn2003jim}.
+
+After solving all of the QEFs, we get all vertices of the result mesh.
+We can build the topology by connecting vertices from
+adjacent grid cells.
 
 \subsection{The CPU Version}
 
