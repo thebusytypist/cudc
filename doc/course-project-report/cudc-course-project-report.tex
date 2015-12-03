@@ -426,7 +426,9 @@ we can trade some computation for better memory performance.
 The total running time is 0.556 seconds.
 It is about 5.64x speed-up comparing with the CPU implementation.
 
-We use nVidia's Visual Profiler to give detailed information of running time.
+We supply \texttt{-G} option in our kernel compilation to generate
+profiling information
+and use nVidia's Visual Profiler to give detailed information of running time.
 It is shown in table \ref{tab:cudc2-cuda-performance}.
 
 \begin{table}[h]
