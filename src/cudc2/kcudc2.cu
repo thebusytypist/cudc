@@ -108,7 +108,7 @@ __device__ void SVD2(
 __device__ void PseudoInverse2(
     const float* M,
     float* pinv) {
-    const float EPS = 1e-7f;
+    const float EPS = 1e-1f;
 
     float U[4], S[2], VT[4];
     SVD2(M, U, S, VT);
